@@ -1,0 +1,275 @@
+<?php 
+if(isset($_POST['go']) && $_POST['go'] == 'Submit'){
+		  $helloid = $_POST['selectedrecord'];
+		  $selecteddomain = $_POST['selecteddomain'];
+		  $resource = Mage::getSingleton('core/resource');
+		  $read= $resource->getConnection('core_read');	
+		  $getdata = $read->query("SELECT * FROM zimbrabilling_domains WHERE id = '".$helloid."'")->fetchObject();
+		  $getmailboxes = $read->query("SELECT * FROM zimbrabilling_mailboxes WHERE domain = '".$selecteddomain."'")->fetchAll();
+		 # print_r($getdata);
+}
+?>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+<script src="http://ajax.microsoft.com/ajax/jQuery.Validate/1.7/jQuery.Validate.min.js"></script>   
+<script>
+
+  function displayaccounts(value){
+	// alert(value);	
+	 $('#selecetedrecord').val(value);
+	 var selecteddomain = $('#userdomains :selected').text();
+	 
+	 $('#selecteddomain').val(selecteddomain);
+  }
+  
+  function deletemailbox(id){
+	  $.post('<?php echo $this->getdeleteUrl();?>',{'mailboxid':id},function(data){
+		 // alert(data);
+		 if(data == 'account deleted'){
+			 $('#mailbox_'+id).css({'display':'none'});
+		 }
+	  });
+  }
+  
+  function resetpwd(id){
+	  $.post('<?php echo $this->getresetpwdUrl();?>',{'mailboxid':id},function(data){
+		  if(data == 'password changed'){
+			  alert('Password changed');
+		  }
+	  });
+  }
+  
+  function removectrl(ctrl){ 
+	
+	  $(ctrl).parent().remove();		
+	   var createdmailboxes = $('#createdmailboxes').val();
+	   createdmailboxes = parseInt(createdmailboxes)-1;
+	   $('#createdmailboxes').val(createdmailboxes);
+  }
+  
+  function check(value){
+	 var value = document.getElementById('userdomains').value;
+	 if(value == '' || value == '0'){
+		alert('Please select domain'); 
+		///return false;
+	 }else{
+		document.getElementById('myform').submit(); 
+	 }
+  }
+  
+  $(document).ready(function(){
+	   
+	  $('#addmore').click(function(){
+		 var totalaccounts = $('#mailbox div.zm_addmailboxes').length;
+		// alert(totalaccounts);
+		 var allowed = $('#mailboxesallowed').val();
+		 var domain = $('#domainname').val();
+		 var createdmailboxes = $('#createdmailboxes').val();
+		  createdmailboxes = parseInt(createdmailboxes)+1;	
+		 //alert(createdmailboxes);
+		if((allowed-1 > totalaccounts) && ((createdmailboxes!=0) && (allowed-1>createdmailboxes))){
+		 var html = '';
+		 html += '<div class="zm_addmailboxes">';
+		 html += '<label>Account No:'+(totalaccounts + 1)+'</label><br/>';
+		 html += '<label style="margin-right: 35px;"> Email:</label><input type="text" name="username[]" id="username[]" size="30" class="required"/><p style="float:right;position:relative;width:79px;">@'+domain+'</p><div class="clear"></div>';
+		 html += '<label style="margin-right: 10px;">Password:</label><input type="password" name="password[]" id="password[]" size="30" class="required" />';
+		 html += '&nbsp;&nbsp;<a href="javascript:void(0);" onclick="removectrl(this);"><img src = "<?php echo $this->getSkinUrl('css/zm_images/zm_cancel.gif');?>" style="vertical-align:middle;" /></a>';
+		 html += '</div>';
+				 
+			 
+				 
+		 $('#mailbox').append(html);
+		 $('#createdmailboxes').val(createdmailboxes);
+		
+		}else{
+			alert("You cannot add more mailboxes");
+		}
+	  });
+	  
+ });
+ 
+ 
+ $(document).ready(function(){	
+
+	// select element styling
+	$('select.selectplan').each(function(){
+		var title = $(this).attr('title');
+		//alert(title);
+		if( $('option:selected', this).val() != ''  ) title = $('option:selected',this).text();
+		//alert(title);
+		$(this)
+			.css({'z-index':10,'opacity':0})
+			.after('<span class="selectplan">' + title + '</span>')
+			.change(function(){
+				val = $('option:selected',this).text();
+				$(this).next().text(val);
+				});
+	});
+
+});  
+ $(document).ready(function(){
+	$('#mailboxesform').validate(); 
+	$('#myform').validate();
+ });
+</script>
+<?php 
+	  $customer = Mage::getSingleton('customer/session')->getCustomer();
+	  $customerid = $customer->getId();
+	  $resource = Mage::getSingleton('core/resource');
+	  $read= $resource->getConnection('core_read');
+	  $counthello = $read->query("SELECT * FROM zimbrabilling_domains WHERE customerid = '".$customerid."'")->fetchAll(); 
+	  #print_r($counthello); die;
+      $countmailboxes = $read->query("SELECT * FROM zimbrabilling_mailboxes WHERE customerid = '".$customerid."'")->fetchAll();	  
+?>
+<div id="zm_main">
+<div class="zm_page-title">
+     <h2 class="color_blue" style="text-align:center; font-family: georgia;font-size: 24px;"><b>HOSTED MAILBOX BILLING</b></h2>
+    <h3 class="color_blue"><p style="text-align:center;">Sharing Files, Documents, Calendars, Contacts with Colleagues Inside and </p><p style="text-align:center;"> Outside your Organization Made Easier than Ever Before!</p></h3>
+</div>
+<div class="zm_intro">
+<p>Give users the ability to manage multiple email accounts, share documents and contacts and manage personal and business calendars from one centralized location. Add one or more additional Business Professional mailboxes.</p>
+
+    <div style="width:97% !important;background:#fff;padding:10px;">   
+     <?php if($this->getRequest()->getParam('msg')){ ?>
+    	  <p style="text-align:center;color:green;font-weight:bold;">Mailboxes Created !!!!</p>
+     <?php }?> 
+     
+     <?php /*?><?php if(isset($msg) && ($msg!='')): echo $msg; endif;?><?php */?> 
+     <?php if ($this->helper('customer')->isLoggedIn() ) {?>
+       <?php if(count($counthello)>0){?>
+       <h3 style="margin-top:10px;">Select domain to create mailboxes:</h3>
+     <div style="margin-top:10px;">
+   
+       <form action="<?php echo $this->getDisplaymailboxUrl();?>" method="post" id="myform" name="myform" onsubmit="return false;">
+          <input name="form_key" type="hidden" value="<?php echo Mage::getSingleton('core/session')->getFormKey() ?>" />
+		     <select name="userdomains" onchange="displayaccounts(this.value);" id="userdomains" class="selectplan required">
+               <option value="0">Select domain</option>
+               <?php for($i=0;$i<count($counthello);$i++){?>
+               <option value="<?php echo $counthello[$i]['id'];?>" <?php if(isset($_POST['selectedrecord']) && $_POST['selectedrecord'] == $counthello[$i]['id']):?> selected="selected" <?php endif;?>><?php echo $counthello[$i]['domain'];?></option>
+               <?php }?>
+             </select>
+           <input type="hidden" name="selectedrecord" value="" id="selecetedrecord"/>
+           <input type="hidden" name="selecteddomain" value="" id="selecteddomain" />
+           
+            <div style="margin-left:76px;padding-top:10px;display:block;clear:both;">
+            	<input type="submit" name="go" value="Submit" id="go" class="nav_zm" onclick="check('<?php echo $counthello[$i]['id'];?>');" />
+            </div>
+       </form>   
+       </div>   
+	
+    <?php #print_r($_POST);?>
+    <?php if(isset($_POST['userdomains'])){
+		   #echo $_POST['userdomains'];
+		  #$domain = $_POST['selecteddomain'];
+		  #echo $domain;
+		 
+		  
+		  $helloid = $_POST['userdomains'];
+		  //$selecteddomain = $_POST['selecteddomain'];
+		  $resource = Mage::getSingleton('core/resource');
+		  $read= $resource->getConnection('core_read');	
+		  $getdata = $read->query("SELECT * FROM zimbrabilling_domains WHERE id = '".$helloid."'")->fetchObject();
+		  
+		  $domain = $getdata->domain;
+		  $host = parse_url($domain, PHP_URL_HOST);
+	      $domain_name = preg_replace('/^(www\.)/i', '', $host);
+		  
+		  $getmailboxes = $read->query("SELECT * FROM zimbrabilling_mailboxes WHERE domain = '".$domain."' ORDER BY customerid")->fetchAll();	
+          $currentdate = NOW();
+		  $date1 = strtotime($getdata->expiry_date);
+		
+     	  $date2 = strtotime($currentdate);
+	      #echo date('d-m-Y',$date1); echo '<br/>';
+		  #echo date('d-m-Y',$date2);
+	?>
+    
+    <div>
+    <?php if($date1>$date2){?>
+    <?php if(empty($getdata) || ($getdata->mailboxes)>count($getmailboxes)+1){?>  
+     <form action="<?php echo $this->getCreatemailboxUrl()?>" method="post" id="mailboxesform">
+      <input name="form_key" type="hidden" value="<?php echo Mage::getSingleton('core/session')->getFormKey() ?>" />
+      <input type="hidden" name="mailboxesallowed" id="mailboxesallowed" value="<?php echo $getdata->mailboxes;?>" />
+      <input type="hidden" name="domainname" id="domainname" value="<?php echo strtolower($domain_name);?>"/>
+      <input type="hidden" name="fulldomain" id="fulldomain" value="<?php echo $getdata->domain;?>" />
+      <input type="hidden" name="createdmailboxes" id="createdmailboxes" value="<?php echo count($getmailboxes);?>" />
+      
+        <div id="mailbox" style="margin-top:20px;">
+           <div class="zm_addmailboxes" style="width:440px !important;margin-bottom:20px !important;">
+           <label>Account No:1</label><br/>
+             <label style="margin-right: 35px;">Email:</label>
+             <input type="text" name="username[]" id="username[]" size="30" class="required"/>&nbsp;&nbsp;<p style="float:right;position:relative;width:118px;"><?php echo '@'.strtolower($domain_name);?></p><div class="clear"></div>
+             
+             <label style="margin-right: 10px;">Password:</label>
+             <input type="password" name="password[]" id="password[]" value="" size="30" class="required" />
+           </div>
+        </div>
+      
+      <input type="button" name="addmore" id="addmore" value="Add more accounts" class="nav_zm" style="width:160px !important;" />  
+      
+      <input type="submit" name="submit" id="submit" value="Create" class="nav_zm" />
+	</form>
+ <?php }else{
+ echo '<p>You have already created the allowed mailboxes</p>';}
+ }else{?>
+<p style="margin-top:10px;">Your account has been suspended for this domain !!! Please renew your account. Click here <a href="/zmb?step=3&customerid=<?php echo $getdata->customerid;?>&domain=<?php echo $getdata->domain;?>" class="zmb_login_reg">Renew</a> to renew your plan.</p>
+<?php }?>
+    </div>
+    
+    <?php }?>
+    <?php }else{?>
+    <p>You have not purchased a plan yet.<a href="<?php echo 'http://'.$_SERVER['SERVER_NAME'].'/zmb'; ?>" class="zmb_login_reg"> Click here</a> to purchase plan.</p>
+    <?php }?>
+<?php }else{?>    
+      <p>Before you move forward with the process we require you to login to create accounts.Click here to login <a href="<?php echo Mage::getUrl('customer/account/login');?>" class="zmb_login_reg">Login</a></p>
+      <p>If you don't have an account as of yet, Click here to create one <a href="<?php echo Mage::getUrl('customer/account/create');?>" class="zmb_login_reg">Register</a></p> 
+<?php }?>
+<!--------Listing the created mailboxes---------------->
+<div id="mailboxes_listing" style="margin-top:20px;">
+<?php #print_r($getmailboxes);
+      if(!empty($getmailboxes)){
+?>
+ <?php if($date1>$date2){?>
+<h3>Created mailboxes</h3>
+  <table width="70%"  cellspacing="10">
+    <tr>
+     <th>Email</th>
+     <th>Action</th>
+    </tr>
+  <?php for($j=0;$j<count($getmailboxes);$j++){?>  
+    <tr id="mailbox_<?php echo $getmailboxes[$j]['intID'];?>"  <?php if($j%2==0) { ?> style="background-color:#FFFFFF;" <?php }else{?>style="background-color:#D4EEF5;"<?php }?>>
+     <td><?php echo $getmailboxes[$j]['email'];?></td>
+     <td><a href="javascript:void(0);" onclick="resetpwd('<?php echo $getmailboxes[$j]['intID'];?>');">Reset password</a>&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:void(0);" onclick="deletemailbox('<?php echo $getmailboxes[$j]['intID'] ?>');">Delete</a></td>
+    </tr>
+   <?php }?> 
+  </table>
+<?php }?>  
+<?php }?>  
+</div>
+</div></div>
+<div class="clear"></div>
+
+</div>
+<!---------list the mailboxes created-------------->
+<style>
+@-moz-document url-prefix() { 
+  span.selectplan{
+	margin-left:40px !important;
+  }
+  
+  .selectplan {
+	  margin-left: -165px !important;
+  }
+
+}
+.breadcrumbs{
+	display:none !important;	
+}
+
+label.error {
+    display: block;
+    font-size: 12px;
+    line-height: 6px;
+    margin-left: 78px;
+	text-align:left !important;
+	position:absolute !important;
+}
+</style>

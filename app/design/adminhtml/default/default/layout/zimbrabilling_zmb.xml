@@ -1,0 +1,68 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Magento backend layout
+ *
+ * @author Magento
+ */
+-->
+<layout version="0.1.0">
+	<adminhtml_zmb_index>
+        <reference name="content">
+            <block type="zimbrabilling_zmb/adminhtml_zmb" name="zmb" />
+        </reference>
+    </adminhtml_zmb_index>
+
+    <adminhtml_zmb_grid>
+        <block type="zimbrabilling_zmb/adminhtml_zmb_grid" name="zmb_grid"/>
+    </adminhtml_zmb_grid>
+
+    <adminhtml_zmb_new>
+        <update handle="adminhtml_zmb_edit" />
+    </adminhtml_zmb_new>
+	
+	
+	<adminhtml_invoices_index>
+        <reference name="content">
+            <block type="zimbrabilling_zmb/adminhtml_invoices" name="invoices" />
+        </reference>
+    </adminhtml_invoices_index>
+
+    <adminhtml_invoices_grid>
+        <block type="zimbrabilling_zmb/adminhtml_invoices_grid" name="invoices_grid"/>
+    </adminhtml_invoices_grid>
+
+    <adminhtml_invoices_new>
+        <update handle="adminhtml_invoices_edit" />
+    </adminhtml_invoices_new>
+	
+    <adminhtml_invoices_view>
+	       <reference name="head">
+      			 <action method="addJs"><script>zimbrabilling/js/jquery.js</script></action>
+   			</reference>
+		 <reference name="content">
+        	<block type="zimbrabilling_zmb/adminhtml_invoices_view" name="invoices_view" template="zimbrabilling/sales/invoice.phtml"/>
+          </reference>
+   </adminhtml_invoices_view>
+
+<adminhtml_zmb_edit>
+        <update handle="editor"/>
+        <reference name="content">
+            <block type="zimbrabilling_zmb/adminhtml_zmb_edit" name="zmb_edit" />
+        </reference>
+        <reference name="left">
+            <block type="zimbrabilling_zmb/adminhtml_zmb_edit_tabs" name="zmb_edit_tabs">
+                <block type="zimbrabilling_zmb/adminhtml_zmb_edit_tab_main" name="zmb_edit_tab_main" />
+                <block type="zimbrabilling_zmb/adminhtml_zmb_edit_tab_content" name="zmb_edit_tab_content" />
+                <block type="zimbrabilling_zmb/adminhtml_zmb_edit_tab_image" name="zmb_edit_tab_image" />
+				<block type="zimbrabilling_zmb/adminhtml_zmb_edit_tab_custom" name="zmb_edit_tab_custom" />
+                <action method="addTab"><name>main_section</name><block>zmb_edit_tab_main</block></action>
+                <action method="addTab"><name>content_section</name><block>zmb_edit_tab_content</block></action>
+                <action method="addTab"><name>image_section</name><block>zmb_edit_tab_image</block></action>
+				<action method="addTab"><name>custom_section</name><block>zmb_edit_tab_custom</block></action>
+            </block>
+        </reference>
+    </adminhtml_zmb_edit>	
+
+	
+</layout>

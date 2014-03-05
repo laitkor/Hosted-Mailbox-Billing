@@ -1,0 +1,361 @@
+    
+<?php 
+  if(!isset($_GET['param'])){
+    #echo '<pre>';print_r($_REQUEST); echo '</pre>';
+     #echo $_REQUEST['first_name'];
+     #echo date('M d,Y H:i:s A',strtotime($_REQUEST['payment_date']));
+     $session = Mage::getModel('core/session');
+     $mysession = Mage::getModel('core/session')->getData();
+     $session->setData('customerid',$_REQUEST['custom']);
+ #echo '<pre>'; print_r($mysession);
+ # die;
+  /**********insert in domains table***************************/
+      $read = Mage::getSingleton('core/resource')->getConnection('core_read');
+	  $newdetail = $read->query("SELECT * FROM `zimbrabilling_cycles` WHERE id = '".$mysession['billingcycle']."'")->fetchObject();	
+
+	  if($newdetail->duration == 'monthly'){
+		  $todayDate = date("Y-m-d");
+		  $dateOneMonthAdded = strtotime(date("Y-m-d", strtotime($todayDate)) . "+1 month");
+	  }
+	  if($newdetail->duration == 'anually'){
+		  $todayDate = date("Y-m-d");
+		  $dateOneMonthAdded = strtotime(date("Y-m-d", strtotime($todayDate)) . "+12 month");
+	  }
+	  if($newdetail->duration == 'semi-anually'){
+		  $todayDate = date("Y-m-d");
+		  $dateOneMonthAdded = strtotime(date("Y-m-d", strtotime($todayDate)) . "+6 month");
+	  }
+	  
+	  if($newdetail->duration == 'quaterly'){
+		  $todayDate = date("Y-m-d");
+		  $dateOneMonthAdded = strtotime(date("Y-m-d", strtotime($todayDate)) . "+4 month");
+	  }
+	  
+	  $session->setData('price',$newdetail->price);
+	  
+	  $writequery = Mage::getSingleton('core/resource')->getConnection('core_write');
+	  $fieldsquery = array();
+	  $fieldsquery['plan_title']= $mysession['planname'];
+	  $fieldsquery['billingcycle'] = $mysession['billingcycle'];
+	  $fieldsquery['domain'] = strtolower($mysession['domain']);
+	  #$fields['customerid'] = $mysession['customerid'];
+	  $fieldsquery['planid'] = $mysession['planid'];
+	  $fieldsquery['created_time'] = $mysession['createdtime'];
+	  $fieldsquery['mailboxes'] = $mysession['mailboxes'];
+	  $fieldsquery['email_prefered'] = $mysession['email_prefered'];
+	  $fieldsquery['duration'] = $newdetail->duration;
+	  $fieldsquery['plan_price'] = $newdetail->price;
+	  $fieldsquery['expiry_date'] = date('Y-m-d',$dateOneMonthAdded);
+	  $fieldsquery['customerid'] = $_REQUEST['custom'];
+	  $fieldsquery['plan_mailboxes'] = $mysession['mailboxes'];
+	  #echo '<pre>'; print_r($fieldsquery); die;
+	  $writequery->insert('zimbrabilling_domains', $fieldsquery);
+	  $writequery->commit();
+  
+        /**********************************/
+  
+            $write = Mage::getSingleton('core/resource')->getConnection('core_write');
+			$fields = array();
+			$fields['name']= $_REQUEST['first_name'].' '.$_REQUEST['last_name'];
+			#$fields['last_name'] = $_REQUEST['last_name'];
+			$fields['payment_date']= date('M d,Y H:i:s A',strtotime($_REQUEST['payment_date']));
+			$fields['payment_status']= $_REQUEST['payment_status'];
+			$fields['address_street']= $_REQUEST['address_street'];
+			$fields['address_city']= $_REQUEST['address_city'];
+			$fields['address_country'] = $_REQUEST['address_country'];
+			$fields['business_email'] = $_REQUEST['business'];
+			$fields['payer_email'] = $_REQUEST['payer_email'];
+			$fields['txn_id'] = $_REQUEST['txn_id'];
+			$fields['payment_type'] = $_REQUEST['payment_type'];
+			$fields['receiver_email'] = $_REQUEST['receiver_email'];
+			$fields['receiver_id'] = $_REQUEST['receiver_id'];
+			$fields['item_name'] = $_REQUEST['item_name'];
+			$fields['payment_gross'] = $_REQUEST['payment_gross'];
+			$fields['item_number'] = $_REQUEST['item_number'];
+			$fields['protection_eligibility'] = $_REQUEST['protection_eligibility'];
+			$fields['address_status'] = $_REQUEST['address_status'];
+			$fields['customerid'] = $_REQUEST['custom'];
+			$fields['payer_id'] = $_REQUEST['payer_id'];
+			$fields['payer_status'] = $_REQUEST['payer_status'];
+			$fields['address_zip'] = $_REQUEST['address_zip'];
+			$fields['address_country_code'] = $_REQUEST['address_country_code'];
+			$fields['address_name'] = $_REQUEST['address_name'];
+			$fields['address_state'] = $_REQUEST['address_state'];
+			$fields['residence_country'] = $_REQUEST['residence_country'];
+			$fields['handling_amount'] = $_REQUEST['handling_amount'];
+			$fields['pending_reason'] = $_REQUEST['pending_reason'];
+			
+ 			$write->insert('zimbrabilling_invoices', $fields);
+ 			$write->commit();		
+			#print_r($fields);
+            #die;
+  			$customerid = $_REQUEST['custom'];
+			#$customerid = '13';
+			$customer = Mage::getModel('customer/customer')->load($customerid);
+		
+			#echo '<pre>';print_r($customer->getData()); die;
+			$customerdata = $customer->getData();
+			/*$address = Mage::getModel('customer/address')->load('2');
+		    
+		   print_r($address);die;*/
+		   $read = Mage::getSingleton('core/resource')->getConnection('core_read');
+		   #$_REQUEST['txn_id'] = '7NS64813WS4866434';
+		   $invoicedetails = $read->query("SELECT * FROM `zimbrabilling_invoices` WHERE txn_id = '".$_REQUEST['txn_id']."'")->fetchObject();
+		   #echo '<pre>';
+		   #print_r($invoicedetails); die;	
+		   $message  ="";
+		   $message .= '<body style="background:#F6F6F6; font-family:Verdana, Arial, Helvetica, sans-serif; font-size:12px; margin:0; padding:0;">
+<div style="background:#F6F6F6; font-family:Verdana, Arial, Helvetica, sans-serif; font-size:12px; margin:0; padding:0;">
+<table cellspacing="0" cellpadding="0" border="0" height="100%" width="100%">
+<tr>
+    <td align="center" valign="top" style="padding:20px 0 20px 0">
+        <!-- [ header starts here] -->
+        <table bgcolor="#FFFFFF" cellspacing="0" cellpadding="10" border="0" width="650" style="border:1px solid #E0E0E0;">
+            
+        <!-- [ middle starts here] -->
+            <tr>
+                <td valign="top">
+                    <h1 style="font-size:22px; font-weight:normal; line-height:22px; margin:0 0 11px 0;"">Hello, '.$customerdata['firstname'].'&nbsp;'.$customerdata['lastname'].'</h1>
+                    <p style="font-size:12px; line-height:16px; margin:0;">
+                        Thank you for your order from Main website store.
+                        
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <h2 style="font-size:18px; font-weight:normal; margin:0;">Your Invoice #'.$invoicedetails->id.'</h2>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <table cellspacing="0" cellpadding="0" border="0" width="650">
+                        <thead>
+                            <tr>
+                                <th align="left" width="325" bgcolor="#EAEAEA" style="font-size:13px; padding:5px 9px 6px 9px; line-height:1em;">Shipping Information:</th>
+                                <th width="10"></th>
+                                <th align="left" width="325" bgcolor="#EAEAEA" style="font-size:13px; padding:5px 9px 6px 9px; line-height:1em;">Payment Method:</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td valign="top" style="font-size:12px; padding:7px 9px 9px 9px; border-left:1px solid #EAEAEA; border-bottom:1px solid #EAEAEA; border-right:1px solid #EAEAEA;">'
+                              .$invoicedetails->name.'<br/>'.$invoicedetails->address_street.'<br/>'.$invoicedetails->address_city.','.$invoicedetails->address_state.'&nbsp;'.$invoicedetails->address_zip.'<br/>'.$invoicedetails->address_country.
+                            '</td>
+                            <td>&nbsp;</td>
+                            <td valign="top" style="font-size:12px; padding:7px 9px 9px 9px; border-left:1px solid #EAEAEA; border-bottom:1px solid #EAEAEA; border-right:1px solid #EAEAEA;">
+                                PayPal Express Checkout <br/>
+								Payer Email <br/>'.$invoicedetails->payer_email.'</td>
+                        </tr>
+                        </tbody>
+                    </table>
+              
+                </td>
+            </tr>
+			<tr>
+             <td>
+               <table width="650" cellspacing="0" cellpadding="0" border="0" style="border:1px solid #eaeaea">
+                 <thead>
+                   <tr>
+                     <th bgcolor="#EAEAEA" align="left" style="font-size:13px;padding:3px 9px">Item</th>
+                     <th bgcolor="#EAEAEA" align="left" style="font-size:13px;padding:3px 9px"></th>
+                     <th bgcolor="#EAEAEA" align="center" style="font-size:13px;padding:3px 9px">Qty</th>
+                     <th bgcolor="#EAEAEA" align="right" style="font-size:13px;padding:3px 9px">Subtotal</th>
+                   </tr>
+                 </thead>
+                 <tbody bgcolor="#F6F6F6">
+                   <tr>
+                     <td valign="top" align="left" style="padding:3px 9px;border-bottom:1px dotted #cccccc"><strong style="font-size:11px">'.$invoicedetails->item_name.'</strong></td>
+                     <td valign="top" align="left" style="font-size:11px;padding:3px 9px;border-bottom:1px dotted #cccccc"></td>
+                     <td valign="top" align="center" style="font-size:11px;padding:3px 9px;border-bottom:1px dotted #cccccc">1</td>
+                     <td valign="top" align="right" style="font-size:11px;padding:3px 9px;border-bottom:1px dotted #cccccc"><span>$'.$invoicedetails->payment_gross.'</span></td>
+                   </tr>
+                 </tbody>
+                 <tfoot>
+                   <tr>
+                     <td align="right" style="padding:3px 9px" colspan="3"> Subtotal </td>
+                     <td align="right" style="padding:3px 9px"><span>$'.$invoicedetails->payment_gross.'</span></td>
+                   </tr>
+                   <tr>
+                     <td align="right" style="padding:3px 9px" colspan="3"> Shipping &amp; Handling </td>
+                     <td align="right" style="padding:3px 9px"><span>$'.$invoicedetails->handling_amount.'</span></td>
+                   </tr>
+                   <tr>
+                     <td align="right" style="padding:3px 9px" colspan="3"><strong>Grand Total</strong></td>
+                     <td align="right" style="padding:3px 9px"><strong><span>$'.$invoicedetails->payment_gross.'</span></strong></td>
+                   </tr>
+                 </tfoot>
+               </table>
+             </td>
+            </tr>
+            <tr>
+                <td bgcolor="#EAEAEA" align="center" style="background:#EAEAEA; text-align:center;"><center><p style="font-size:12px; margin:0;">Thank you again, <strong>Main Website Store</strong></strong></p></center></td>
+            </tr>
+        </table>
+    </td>
+</tr>
+</table>
+</div>
+</body>
+';
+		   $mail = Mage::getModel('core/email');
+		   $mail->setToName($customerdata['firstname']);
+		   $mail->setToEmail($customerdata['email']);
+		   $mail->setBody($message);
+		   $mail->setSubject(' Main Website Store');
+		   $mail->setFromName("Sales");
+		   $mail->setType('html');// YOu can use Html or text as Mail format
+		   $mail->send();	
+/*************create account in zimbra************************/
+		   
+		    $path=Mage::getBaseDir('code');
+			require_once($path.'/zm/config.php');
+			require_once($path.'/zm/Zm/Auth.php');
+			require_once($path.'/zm/Zm/Account.php');
+			require_once($path.'/zm/Zm/Domain.php');
+			require_once($path.'/zm/Zm/Server.php');
+			
+			$firstname = $customerdata['firstname'];
+			$lastname = $customerdata['lastname'];
+			$customeremail = $customerdata['email'];
+			$customername = $firstname.' '.$lastname;
+			//Check login
+	  
+			$auth = new Zm_Auth($zimbraserver, $zimbraadminemail, $zimbraadminpassword);
+			$l = $auth->login();
+			if(is_a($l, "Exception")) {
+					echo "Error : cannot login to $zimbraserver :-(\n";
+					print_exception($l);
+					exit();
+			}
+			
+	if($l){
+	
+		 $domainManager = new Zm_Domain($auth);   
+		 // check if account exists
+		 $accountManager = new Zm_Account($auth);
+		 
+		//print_r($result);
+		$mysession = Mage::getModel('core/session')->getData();
+		//Fetch domain name from table:zimbrabilling_domains if exists;
+		$read= Mage::getSingleton('core/resource')->getConnection('core_read');
+		$value=$read->query("SELECT * FROM zimbrabilling_domains where customerid='".$customerid."' order by id DESC")->fetchObject();
+		#print_r($value->fetchAll()); die;
+		#$getalldata = $value->fetchAll();
+		  $email_prefered = $value->email_prefered;
+		  $domain = $value->domain;  
+	  
+			$host = parse_url($domain, PHP_URL_HOST);
+			$domain_name = preg_replace('/^(www\.)/i', '', $host);
+			$current_date = date("Y-m-d ", time());
+			$updatetime = date("Y-m-d", strtotime($update));
+	  
+	  
+			  $r = $domainManager->getAllDomains();
+			   foreach($r['SOAP:ENVELOPE']['SOAP:BODY']['GETALLDOMAINSRESPONSE']['DOMAIN'] as $s){
+				   $newarr[] = $s['NAME'];
+			   }
+			   #print_r($newarr);
+			   #die;
+			   // create domain in case of purchasing plan
+				  $newDomain= $domainManager->createDomain($domain_name);
+				  #echo $domain_name;
+				  #echo '<pre>';print_r($newDomain);die;
+				  if($email_prefered!=''){
+					  $account_name = $email_prefered."@".$newDomain['NAME'];
+				  }else{
+					  $account_name=strtolower($firstname).".".strtolower($lastname)."@".$newDomain['NAME'];
+				  }
+				  $password = substr(md5(microtime()),rand(0,26),7);;
+				 
+				  $attrs = array("sn"=>$lastname, "gn"=>$firstname, "l"=>"Metropolis");
+				  $result = $accountManager->accountExists($account_name,"auto");
+				  $r = $accountManager->createAccount($account_name, $password, $attrs);
+				  $message = '';
+				  $message .='<body style="background:#F6F6F6; font-family:Verdana, Arial, Helvetica, sans-serif; font-size:12px; margin:0; padding:0;">
+	  <div style="background:#F6F6F6; font-family:Verdana, Arial, Helvetica, sans-serif; font-size:12px; margin:0; padding:0;">
+	  <table cellspacing="0" cellpadding="0" border="0" height="100%" width="100%">
+	  <tr>
+		  <td align="center" valign="top" style="padding:20px 0 20px 0">
+			  <!-- [ header starts here] -->
+			  <table bgcolor="#FFFFFF" cellspacing="0" cellpadding="10" border="0" width="650" style="border:1px solid #E0E0E0;">
+				  
+			  <!-- [ middle starts here] -->
+				  <tr>
+					  <td valign="top">
+						  <h1 style="font-size:22px; font-weight:normal; line-height:22px; margin:0 0 11px 0;"">Hi '.$firstname.'&nbsp;'.$lastname.' </h1>
+						  <p style="font-size:12px; line-height:16px; margin:0;">Thank you for signing up with to Zimbra! You signed up from '.$domain.' domain and may now access your account using the below details: </p>
+					  </td>
+					  <tr>
+					   <td>
+						<table cellspacing="0" cellpadding="0" border="0" width="650">
+							  <thead>
+								  <tr>
+									  <th align="left" width="325" bgcolor="#EAEAEA" style="font-size:13px; padding:5px 9px 6px 9px; line-height:1em;">Domain Information:</th>
+									  <th width="10"></th>
+									  
+								  </tr>
+							  </thead>
+							  <tbody>
+							  <tr>
+								  <td valign="top" style="font-size:12px; padding:7px 9px 9px 9px; border-left:1px solid #EAEAEA; border-bottom:1px solid #EAEAEA; border-right:1px solid #EAEAEA;">
+									  
+									  <ul style="list-style:none;line-height:22px;margin:0px;padding:0px;">
+									   <li><b>Login URL: </b><a href="https://gmailer.jumbomailer.com" target="_blank">https://gmailer.jumbomailer.com</a></li>
+									   <li><b>Email: </b>'.$account_name.'</li>
+									   <li><b>Password: </b>'.$password.'</li>
+									  </ul>
+									  
+								  </td>
+								  <td>&nbsp;</td>
+								  
+							  </tr>
+							  </tbody>
+						  </table>
+					   </td>
+					  </tr>
+					  <tr><td>Cheers!<br/>The team at Hosted Mailbox Billing</td></tr>
+					  
+				  </tr>  
+			  </table>
+		  </td>
+	  </tr>
+	  </table>
+	  </div>
+	  </body>';
+				  $mail = Mage::getModel('core/email');
+				  $mail->setToName($firstname);
+				  $mail->setToEmail($customeremail);
+				  $mail->setBody($message);
+				  $mail->setSubject('Account Information');
+				  $mail->setType('html');// YOu can use Html or text as Mail format
+				  $mail->send();
+	
+				  
+    }?>
+	<script>
+      window.location.href = 'thankyou-page?param=complete';
+ </script>
+<?php  }		   
+?>
+ 
+<?php if(isset($_GET['param'])){?> 
+<div id="zm_main">
+<div class="zm_page-title">
+     <h2 class="color_blue" style="text-align:center; font-family: georgia;font-size: 24px;"><b>HOSTED MAILBOX BILLING</b></h2>
+    <h3 class="color_blue"><p style="text-align:center;">Sharing Files, Documents, Calendars, Contacts with Colleagues Inside and </p><p style="text-align:center;"> Outside your Organization Made Easier than Ever Before!</p></h3>
+</div>
+  <div class="zm_intro">			
+    <p style="font-weight:bold;color:#3D6611;">Payment made successfully !!</p>
+    <p>An email has been sent to your email-id with payment details.</p>
+    <p>Now Click on <a href="<?php echo $this->getUrl('mailboxes')?>" class="zmb_login_reg">Create Accounts</a> to create more accounts or <a href="<?php echo 'http://'.$_SERVER['SERVER_NAME'].'/zmb'; ?>" class="zmb_login_reg">Click here</a> to purchase a plan.</p>			
+  </div>
+<?php }?>
+ <div class="clear"></div>
+</div> 
+</div>
+<style>
+.breadcrumbs{
+	display:none !important;	
+}
+</style>

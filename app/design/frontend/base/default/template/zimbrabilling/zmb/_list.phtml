@@ -1,0 +1,243 @@
+<?php
+/**
+ * News template for items list
+ *
+ * @author Magento
+ */
+
+/**
+ * @var $this Magentostudy_News_Block_List
+ * @see Magentostudy_News_Block_List
+ */
+?>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+<script src="http://ajax.microsoft.com/ajax/jQuery.Validate/1.7/jQuery.Validate.min.js"></script>           
+<script type="application/javascript">
+  function displayCreateBox(){
+  	document.getElementById('createmailbox').style.display = 'block';
+	document.getElementById('plandetails').style.display = 'none';
+  }
+  function displayprev(step){
+  	window.location.href = 'zmb?step='+step;
+   }
+  
+  function displaybilling(){
+  	document.getElementById('billing').style.display = 'block';
+  }
+		 
+  function checkavailability(value){
+	$('#loaderimage').css({'visibility':'visible'});
+	domain = $('#domain').val();
+	value = $('#domain').val();
+	value = value.match(/:\/\/(.[^/]+)/)[1];
+
+	$.post('<?php echo $this->getAvailabilityUrl();?>',{'domain':value,'fulldomain':domain},function(data){ // check for domain existence in namecheap
+		 if(data == 'true'){
+				 $('#avail_msg').css({'display':'block'});
+				 $('#confirm_order').css({'display':'none'});
+				 //$('#back').css({'float':'left'});
+				 $('#loaderimage').css({'visibility':'hidden'});
+				 $('#check_avail').css({'display':'block'}); 
+		 }
+		 else{
+		   var xml = data; 
+		   xmlDoc = $.parseXML( xml ),
+		   $xml = $( xmlDoc ),
+		   $title = $xml.find( "CommandResponse" ).each(function(){
+			   var available = $(this).find('DomainCheckResult').attr('Available');
+				if(available == 'true'){
+				   $('#confirm_order').css({'display':'block'});
+				   $('#confirm_order').css({'float':'right'});
+				   //$('#back').css({'float':'left'});
+				   $('#loaderimage').css({'visibility':'hidden'});
+				   $('#check_avail').css({'display':'none'});
+				   $('#avail_msg').css({'display':'none'});
+				}else{
+				   $('#avail_msg').css({'display':'block'});
+				   $('#confirm_order').css({'display':'none'});
+				   //$('#back').css({'float':'left'});
+				   $('#loaderimage').css({'visibility':'hidden'});
+				   $('#check_avail').css({'display':'block'}); 
+			  
+				}
+		  
+			  });
+		 }
+		
+	}); 
+
+ }
+  		 
+
+$(document).ready(function(){
+   $('#myform').validate();	 
+	 
+});
+
+
+$(document).ready(function(){
+     
+	$('#addmore').click(function(){
+	   var totalaccounts = $('#mailbox div').length;
+	  // alert(totalaccounts);
+	   var allowed = $('#mailboxesallowed').val();
+	   var domain = $('#domainname').val();
+	  // alert(allowed);
+	  if(allowed-1 > totalaccounts){
+	   var html = '';
+	   html += '<div style="margin-bottom:10px;">';
+	   html += '<label>Account No:'+(totalaccounts + 1)+'</label><br/>';
+	   html += '<label> Email:</label><input type="text" name="username[]" id="username[]" />&nbsp;@'+domain+'<br/>';
+	   html += '<label>Password:</label><input type="text" name="password[]" id="password[]" />';
+	   html += '&nbsp;&nbsp;<a href="javascript:void(0);" onclick="removectrl(this);">Remove</a>';
+	   html += '</div>';
+	    	   
+	   $('#mailbox').append(html);
+	  }else{
+		  alert("You cannot add more mailboxes");
+	  }
+	});
+	
+	$('#empty_cart').click(function(){
+		$.post('<?php echo $this->getEmptyCartUrl();?>',function(data){
+		    	//alert(data);
+				if(data == 'true'){
+					window.location.href='/hello';
+				}
+		});
+	});
+	
+ });
+ function removectrl(ctrl){ 
+     $(ctrl).parent().remove();		
+ }
+
+</script>  
+<?php $resource = Mage::getSingleton('core/resource');
+	  $read= $resource->getConnection('core_read');
+	  $session = Mage::getModel('core/session');
+	  $plans = $read->query("SELECT * FROM zimbrabilling_zmb")->fetchAll();
+	  $customer = Mage::getSingleton('customer/session')->getCustomer();
+	  $customerid = $customer->getId();
+	  #echo '<pre>';print_r($plans);
+	  #die;
+?>
+
+<div id="news_list_messages"><?php echo $this->getMessagesBlock()->getGroupedHtml() ?></div>
+<div class="page-title">
+    <h3 class="color_blue ">Zimbramagento Makes it Easy to Share Documents, Calendars,
+      Contacts with Colleagues Inside and Outside Your Organization</h3>
+</div>
+<div class="Pad_top_20">Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat. Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat. Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat.</div>
+ <h3 class=" color_dim_blue">Zimbramagento Powered by Magento</h3>
+<?php if(!$this->getRequest()->getParam('step') || ($this->getRequest()->getParam('step') == 1) ){?> 
+<div class="news_list_view">
+<?php foreach($plans as $p):
+      $billingcycles = $read->query("SELECT * FROM zimbrabilling_cycles WHERE planid = '".$p['zmb_id']."'")->fetchAll();
+
+?>
+<div class=" pad_20" style="margin-top:20px;margin-bottom:20px;">
+<form action="<?php echo $this->getPostUrl()?>" method="post" id="myform" name="myform"> 
+    <input type="hidden" name="customerid" value="<?php echo $customerid;?>" />
+    <input type="hidden" name="created_time" value="<?php echo NOW();?>" />  
+    <input type="hidden" name="mailboxes" value="<?php echo $p['mailboxes'];?>" id="mailboxes" />
+    <input type="hidden" name="mailboxsize" value="<?php echo $p['mailboxsize'];?>" id="mailboxsize" /> 
+
+              <div class="left">
+                <div class="offer_box">
+                 <div class="bg_lit_blu pad_5 color_white txt-center"><h3><?php echo $p['title'];?></h3></div>
+                 <div class="bg_white_blue border_btm txt-center pad_10">
+                 </div>
+                <div class="border_btm txt-center pad_10">
+                  <strong><span class=" color_green font_14">PERFECT FOR PERSONAL 
+                 use your domain for your email address.</span><br />
+                
+                  </strong></div>
+                
+                <div class=" pad_10">
+                  <ul class="list font_12">
+                    <li>1 email addresses</li>
+                    <li>1GB storage</li>
+                    <li>Full-featured interface</li>
+                    <li>Fully synchronized email </li>
+                    <li>Free integrated Deluxe Group Calendar† and Online Storage†</li>
+                  </ul>
+                  <div class="Pad_top_10 txt-center">
+                  <input type="hidden" name="planid" id="planid<?php echo $p['zmb_id'];?>" value="<?php echo $p['zmb_id'];?>" />
+                  <input type="hidden" name="title" id="planname_<?php echo $p['zmb_id'];?>" value="<?php echo $p['title'];?>" />
+                       <select style='display:block; clear:both;' name='billingcycle' id='billingcycle' class='required'>
+                             <option>Select Billing Cycle</option>
+                              <?php foreach($billingcycles as $b){?>
+                                <option value="<?php echo $b['id']; ?>" <?php if($session['billingcycle'] == $b['id']): echo "selected=selected"; endif; ?>><?php echo $b['title'];?></option>
+                              <?php }?>  
+                       </select>
+                    
+                  </div>
+                  </div> 
+                </div>
+              <div class="clear"></div>
+              <div style="margin-top:5px;"><input type="submit" value="Add Plan"/></div>
+              </div>
+</form>
+</div>
+
+<?php endforeach;?>
+<div style="clear:both;"></div>
+
+</div>
+<?php }?>
+<?php if($this->getRequest()->getParam('step') && ($this->getRequest()->getParam('step') == 2)){?>
+  <div class="left">
+   <div class="offer_box" style="width:585px !important;margin:10px;padding:10px;border:#000 2px solid !important;">
+     <div style="text-align:center;text-transform:uppercase;">Domain Registration</div>
+     <p id="avail_msg" style="display:none;font-weight: bold;margin-top: 10px;text-align: center;">Domain Available. Please enter another domain</p>
+     <form action="<?php echo $this->getPostUrl()?>" method="post" id="myform" name="myform">
+    <div  style="margin-top:20px;text-align:left;line-height:30px;">
+   <label style="margin-right:36px;"><b>Domain Name:</b></label>
+   <input type="text" name="domain" id="domain" class="required url txtbox" value="<?php if($mysession['domain']!=''): echo $mysession['domain']; endif; ?>" />
+       <img src="<?php echo $this->getSkinUrl('images/opc-ajax-loader.gif');?>" id="loaderimage" style="visibility:hidden;margin-left:10px;" />
+   <br/>
+   
+   
+   <label><b>Prefered Username:</b></label>
+   <input type="text" name="email_prefered" id="email_prefered" class="txtbox" />
+   <input type="hidden" id="selectedplanid" name="selectedplanid" />
+   <input type="hidden" id="selectedplanname" name="selectedplanname"/><br/><br/>
+   </div>
+   <div style="text-align:center;margin-left:100px;width:243px;" id="nav_buttons">
+   <input type="button" name="back" value="Back" id="back" onClick="displayprev('1');" class="nav_button"/>
+   
+    <input type="submit" value="Confirm Order" class="nav_button" id="confirm_order" name="confirm_order" style="display:none;width:130px !important;"/>
+    <input type="button" name="check_avail" id="check_avail" value="Check availability" class="nav_button" onclick="checkavailability();" style="width:140px !important;float:right;"/>
+    </div>
+    </form>
+   
+   </div>
+  </div>
+<?php }?>
+
+<?php if($this->getRequest()->getParam('step') && ($this->getRequest()->getParam('step') == 3)){?>
+  <div class="left">
+   <div class="offer_box" style="width:585px !important;margin:10px;padding:10px;border:#000 1px solid !important;">
+<form action="<?php echo $this->getPostUrl()?>" method="post" id="myform" name="myform">
+    <input type="hidden" name="orderconfirm" />
+    <input type="hidden" name="customerid" value="<?php echo $customerid;?>" />   
+ <?php
+    if ($this->helper('customer')->isLoggedIn() ) {?>
+    <p>Click on chekout to place order.</p>
+     <input type="button" name="back" value="Back" id="back" onClick="displayprev('2');" class="nav_button"/>
+     <input type="submit" name="checkout" value="Checkout" class="nav_button"/>
+   <?php } else {?> 
+     You are not logged in. Click here to login <a href="/customer/account/login">Login</a>&nbsp;&nbsp;If you have not registered yet Click here <a href="/customer/account/create?page=hello">Register</a>      
+  <?php }?>
+ 
+</form>
+</div>
+</div>
+<?php }?>
+<style>
+.pad_20{
+	width:225px;
+	float:left;
+}
+</style>

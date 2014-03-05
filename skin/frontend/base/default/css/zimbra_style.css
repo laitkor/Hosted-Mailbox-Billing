@@ -1,0 +1,326 @@
+/**Css documnet for zimbra**/
+.clear{
+  clear:both;	
+}
+.color_blue{
+ color:#745c23 !important;
+ font-family:Georgia, "Times New Roman", Times, serif;	
+}
+
+#zm_main{
+     background-color: #E2E9EB;
+    padding: 5px;	
+}
+.zm_page-title{
+  background-color:#fff;
+    padding-bottom: 8px;
+    padding-top: 10px;	
+}
+
+.zm_intro{
+ font-family:Arial, Helvetica, sans-serif;
+ font-size:14px !important;
+ background-color:#d4eef5;
+ padding:10px;
+ text-align:justify;	
+}
+
+#zm_tabs ul#tabbed{
+	margin:0px;
+	padding:0px;
+}
+
+#zm_tabs ul#tabbed li{
+   background:#F4F4F4;
+    border-radius: 8px 8px 0 0;
+    float: left;
+    margin-right: 2px;
+    padding: 10px;	
+}
+
+#zm_tabs ul#tabbed li.active{
+	 background:#FFF;	
+}
+#zm_tabs ul#tabbed li a{
+ color:#745C23 !important;
+ text-decoration:none !important;
+ font-size:14px !important;
+ font-weight:bold;	
+}
+
+#zm_tabs{
+	margin-top:20px;
+	padding-left:10px;	
+}
+
+.zm_list_view{
+	background:#fff;
+}
+
+#tabs_features ul li{
+	list-style:disc;
+	padding:8px;
+	font-family:Arial, Helvetica, sans-serif;	
+}
+#tabs_features ul{
+ padding:0px;
+ margin:0px;	
+}
+
+#tabs_features,#tabs_addons{
+     padding-bottom: 20px;
+    padding-left: 25px;
+    padding-top: 15px;	
+}
+
+.tabs_plans_overview .zm_left{
+	float: left;
+    padding: 15px;
+	height:230px;
+	margin-top:30px;
+}
+
+.tabs_plans_overview{
+	
+}
+
+.zm_description{
+	padding-left:20px;
+}
+
+.zm_description ul li{
+	list-style:disc;
+	padding:8px;
+	font-family:Arial, Helvetica, sans-serif;
+	font-size:14px;
+}
+
+.zm_description ul{
+	padding:0px;
+	margin:0px;
+}
+
+.zm_plan_content p{
+	width:250px;
+}
+.selectplan{
+	margin-left:20px;
+/*	background:url('select.png');
+	height:28px;
+	width:100px;*/
+}
+
+.nav_zm{
+	/*background-color: #FF4040;*/
+/*	background:#F77C25;
+    border-radius: 5px 5px 5px 5px;*/
+	background:none repeat scroll 0 0 #F18200;
+	border:1px solid #DE5400;
+    color: #FFFFFF;
+    width: 85px;	
+	padding:3px;
+	font-weight:bold;
+}
+
+#zm_domain{
+  width:635px !important;
+  margin:10px;
+  padding:10px;	
+  background:#fff;
+}
+
+#zm_domain ul{
+	margin:0px;
+	padding:0px;
+}
+
+#zm_domain ul li{
+  float:left;
+  width:290px;	
+}
+
+#zm_domain ul li label.zm_text{
+	margin-right:15px;
+	color:#745C23 !important;
+}
+
+#nav_buttons{
+  margin-top:20px;	
+}
+label.error{
+ display:block;	
+ text-align:center;
+ margin-left:43px;
+}
+input.error{
+	margin-right:25px;
+}
+
+#zm_tabs ul#tabbed li a {
+    color: #745C23 !important;
+    font-size: 14px !important;
+    font-weight: bold;
+    text-decoration: none !important;
+}
+
+.zm_messages li {
+    font-size: 0.95em !important;
+    font-weight: bold !important;
+    margin-bottom: 11px !important;
+    min-height: 15px !important;
+    padding: 8px 8px 2px 32px !important;
+	float:none !important;
+}
+.error-msg {
+    background: url("zm_images/zm_error_msg_icon.gif") no-repeat scroll 10px 10px  !important;
+    /*border: 1px solid #F16048 !important;*/
+	border:none !important;
+    color: #DF280A !important;
+}
+
+.zm_messages ul li {
+    border: 0 none !important;
+    margin: 0 0 3px !important;
+    padding: 0 !important;
+}
+.zm_messages ul {
+    border: 0 none !important;
+}
+
+a.zmb_login_reg{
+    /*background-color: #ED0A03;*/
+	/*background-color:#F77C25;*/
+	background:none repeat scroll 0 0 #F18200;
+	border:1px solid #DE5400;
+    color: #FFFFFF;
+    padding: 2px 15px 4px 14px;
+    text-decoration: none;	
+	/*border-radius:4px;*/
+}
+.zm_shoppingcart{
+	
+}
+
+.zm_shoppingcart ul{
+  margin:0px;
+  padding:0px;	
+}
+
+.zm_shoppingcart ul li{
+	line-height:40px;
+	list-style:none;
+}
+.zm_list_title{
+  padding-right:50px;
+  font-weight:bold;	
+}
+
+.zm_list_value{
+	
+}
+
+.zm_list_b{
+	font-weight:bold !important;
+	font-size:15px;
+}
+
+.zm_addmailboxes{
+	display:block;
+	line-height:35px;
+	margin-bottom:10px;
+	width:400px;
+}
+
+#mailboxes_listing table{
+	
+}
+
+#mailboxes_listing table tr th{
+	text-align:center;
+	/*background-color:#D4EEF5;*/
+	background-color:#D6C295;
+	font-weight:bold;
+}
+
+#mailboxes_listing table tr td{
+	padding:10px 10px 10px 8px;
+}
+
+#mailboxes_listing table tr td a{
+  color:#FF4040 !important;	
+  text-decoration:none;
+}
+
+.zm_mailbox_detail{	
+}
+
+select.selectplan{
+		position:absolute;
+		z-index:10;
+		width:166px !important;
+		height:20px !important;
+		line-height:26px;
+		
+}
+
+/* dynamically created SPAN, placed below the SELECT */
+span.selectplan{
+	/*position:absolute;*/
+	bottom:0;
+	float:left;
+	left:0;
+	width:166px;
+	height:26px;
+	line-height:26px;
+	text-indent:10px;
+	background:url(zm_images/bg_select.gif) no-repeat 0 0;
+	cursor:default;
+	z-index:1;
+}
+
+.selectplan option{
+	background:#F0F0F0;
+}
+
+
+
+#notallowedmsg{
+   background: none repeat scroll 0 0 #FFFFFF;
+   border: 10px solid #ccc;
+   border-radius: 3px 3px 3px 3px;
+   color: #333333;
+   display: none;
+   font-size: 14px;
+   left: 58%;
+   margin-left: -517px;
+   position: absolute;
+   top: 123%;
+   width: 580px;
+   z-index: 2;	
+}
+
+div.close {
+    background: url("zm_images/zm_cancel.gif") no-repeat scroll 0 0 transparent;
+    bottom: 24px;
+    cursor: pointer;
+    float: right;
+    height: 30px;
+    left: 36px;
+    position: relative;
+    width: 30px;
+}
+
+#notallowedmsg .submit{
+	 padding-top: 0;
+    text-align: center;
+	padding-bottom:23px !important;
+	border-bottom:none !important;
+}
+
+#notallowedmsg{
+  float:right;
+  text-decoration:none !important;
+  margin-right: 20px !important;
+  margin-top: -16px !important;	
+  padding:10px;
+}

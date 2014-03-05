@@ -1,0 +1,89 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Magento admin config
+ *
+ * @author Magento
+ */
+-->
+<config>
+    <menu>
+         <zmb translate="title" module="zimbrabilling_zmb">
+            <title>Hosted Mailbox Billing</title>
+            <sort_order>65</sort_order>
+            <children>
+                <manage translate="title" module="zimbrabilling_zmb">
+                    <title>Manage Plans</title>
+                    <action>adminhtml/zmb</action>
+                    <sort_order>30</sort_order>
+                </manage>
+				<invoices translate="title" module="zimbrabilling_zmb">
+                    <title>Invoices</title>
+                    <action>adminhtml/invoices</action>
+                    <sort_order>50</sort_order>
+                </invoices>
+            </children>
+         </zmb>
+    </menu>
+
+    <acl>
+        <resources>
+		   <all>
+      		  <title>Allow Everything</title>
+     	   </all>
+            <admin>
+                <children>
+                    <zmb translate="title" module="zimbrabilling_zmb">
+                        <title>Zmb</title>
+                        <sort_order>65</sort_order>
+                        <children>
+                            <manage translate="title">
+                                <title>Manage zmb</title>
+                                <sort_order>0</sort_order>
+                                <children>
+                                    <save translate="title">
+                                        <title>Save zmb</title>
+                                        <sort_order>0</sort_order>
+                                    </save>
+                                    <delete translate="title">
+                                        <title>Delete zmb</title>
+                                        <sort_order>10</sort_order>
+                                    </delete>
+                                </children>
+                            </manage>
+                        </children>
+						
+						<children>
+                            <invoices translate="title">
+                                <title>Invoices</title>
+                                <sort_order>0</sort_order>
+                                <children>
+                                    <save translate="title">
+                                        <title>Save zmb</title>
+                                        <sort_order>0</sort_order>
+                                    </save>
+                                    <delete translate="title">
+                                        <title>Delete zmb</title>
+                                        <sort_order>10</sort_order>
+                                    </delete>
+                                </children>
+                            </invoices>
+                        </children>
+						
+                    </zmb>
+                    <system>
+                        <children>
+                            <config>
+                                <children>
+                                    <zmb translate="title" module="zimbrabilling_zmb">
+                                        <title>Plans Management</title>
+                                    </zmb>
+                                </children>
+                            </config>
+                        </children>
+                    </system>
+                </children>
+            </admin>
+        </resources>
+    </acl>
+</config>

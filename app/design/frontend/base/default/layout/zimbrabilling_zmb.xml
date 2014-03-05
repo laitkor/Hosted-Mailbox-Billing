@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Magento frontend layout
+ *
+ * @author Magento
+ */
+-->
+<layout version="0.1.0">
+    <default>
+        <reference name="footer_links">
+            <action method="addLink" translate="label title" module="zimbrabilling_zmb" ifconfig="zmb/view/enabled">
+                <label>Hosted Mailbox Billing</label>
+                <url>zmb</url>
+                <title>Hosted Mailbox Billing</title>
+                <prepare>true</prepare>
+            </action>
+        </reference>
+		<reference name="top.links">
+            <action method="addLink" translate="label title" module="zimbrabilling_zmb" ifconfig="zmb/view/enabled">
+                <label>Add mailboxes</label>
+                <url>upgrade</url>
+                <title>Add mailboxes</title>
+                <prepare>true</prepare>
+				<position>10</position>
+				<sort_order>10</sort_order>
+            </action>
+        </reference>
+		<reference name="top.links">
+            <action method="addLink" translate="label title" module="zimbrabilling_zmb" ifconfig="zmb/view/enabled">
+                <label>Create Accounts</label>
+                <url>mailboxes</url>
+                <title>Create Accounts</title>
+                <prepare>true</prepare>
+				<position>20</position>
+				<sort_order>20</sort_order>
+            </action>
+        </reference>
+		 <reference name="head">
+      			 <action method="addCss"><script>css/zimbra_style.css</script></action>
+   			</reference>
+    </default>
+
+    <zimbrabilling_zmb_index_index translate="label">
+        <label>Plans Page</label>
+        <reference name="root">
+            <action method="setTemplate">
+                <template>page/2columns-right.phtml</template>
+            </action>
+            <action method="setHeaderTitle" translate="title" module="zimbrabilling_zmb">
+                <title>Plans</title>
+            </action>
+        </reference>
+        <reference name="content">
+            <block type="zimbrabilling_zmb/list" name="zmb.list" template="zimbrabilling/zmb/list.phtml">
+                <block type="page/html_pager" name="zmb.list.pager" as="zmb_list_pager" />
+            </block>
+        </reference>
+    </zimbrabilling_zmb_index_index>
+
+    <zimbrabilling_zmb_index_view translate="label">
+        <label>Plans Page</label>
+        <reference name="root">
+            <action method="setTemplate">
+                <template>page/2columns-right.phtml</template>
+            </action>
+        </reference>
+        <reference name="content">
+            <block type="zimbrabilling_zmb/item" name="zmb.item" template="zimbrabilling_zmb/zmb/item.phtml" />
+        </reference>
+    </zimbrabilling_zmb_index_view>
+</layout>

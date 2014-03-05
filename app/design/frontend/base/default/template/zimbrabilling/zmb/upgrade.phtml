@@ -1,0 +1,454 @@
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+<script src="http://ajax.microsoft.com/ajax/jQuery.Validate/1.7/jQuery.Validate.min.js"></script>
+<script>
+  function check(value){
+	 var value = document.getElementById('userdomains').value;
+	 if(value == '' || value == '0'){
+		alert('Please select domain'); 
+		///return false;
+	 }else{
+		document.getElementById('myform').submit(); 
+	 }
+  }
+$(document).ready(function(){
+   $('#myform').validate();	
+   $('#myformupgrade').validate();
+	 
+});
+$(document).ready(function(){	
+
+	// select element styling
+	$('select.selectplan').each(function(){
+		var title = $(this).attr('title');
+		//alert(title);
+		if( $('option:selected', this).val() != ''  ) title = $('option:selected',this).text();
+		//alert(title);
+		$(this)
+			.css({'z-index':10,'opacity':0})
+			.after('<span class="selectplan">' + title + '</span>')
+			.change(function(){
+				val = $('option:selected',this).text();
+				$(this).next().text(val);
+				});
+	});
+
+});
+</script>
+<div id="zm_main">
+<div class="zm_page-title">
+     <h2 class="color_blue" style="text-align:center; font-family: georgia;font-size: 24px;"><b>HOSTED MAILBOX BILLING</b></h2>
+    <h3 class="color_blue"><p style="text-align:center;">Sharing Files, Documents, Calendars, Contacts with Colleagues Inside and </p><p style="text-align:center;"> Outside your Organization Made Easier than Ever Before!</p></h3>
+</div>
+<?php 
+
+if(isset($_REQUEST) && $_REQUEST['txn_id']!=''){
+	#if(!isset($_GET['param'])){
+		#print_r($_REQUEST);
+		$arr = explode("=>",$_REQUEST['custom']);
+			#print_r($arr);
+			/**************insert in invoices table****************************/
+		    $write = Mage::getSingleton('core/resource')->getConnection('core_write');
+			$fields = array();
+			$fields['name']= $_REQUEST['first_name'].' '.$_REQUEST['last_name'];
+			#$fields['last_name'] = $_REQUEST['last_name'];
+			$fields['payment_date']= date('M d,Y H:i:s A',strtotime($_REQUEST['payment_date']));
+			$fields['payment_status']= $_REQUEST['payment_status'];
+			$fields['address_street']= $_REQUEST['address_street'];
+			$fields['address_city']= $_REQUEST['address_city'];
+			$fields['address_country'] = $_REQUEST['address_country'];
+			$fields['business_email'] = $_REQUEST['business'];
+			$fields['payer_email'] = $_REQUEST['payer_email'];
+			$fields['txn_id'] = $_REQUEST['txn_id'];
+			$fields['payment_type'] = $_REQUEST['payment_type'];
+			$fields['receiver_email'] = $_REQUEST['receiver_email'];
+			$fields['receiver_id'] = $_REQUEST['receiver_id'];
+			$fields['item_name'] = $_REQUEST['item_name'];
+			$fields['payment_gross'] = $_REQUEST['payment_gross'];
+			$fields['item_number'] = $_REQUEST['item_number'];
+			$fields['protection_eligibility'] = $_REQUEST['protection_eligibility'];
+			$fields['address_status'] = $_REQUEST['address_status'];
+			$fields['customerid'] = $arr[1];
+			$fields['payer_id'] = $_REQUEST['payer_id'];
+			$fields['payer_status'] = $_REQUEST['payer_status'];
+			$fields['address_zip'] = $_REQUEST['address_zip'];
+			$fields['address_country_code'] = $_REQUEST['address_country_code'];
+			$fields['address_name'] = $_REQUEST['address_name'];
+			$fields['address_state'] = $_REQUEST['address_state'];
+			$fields['residence_country'] = $_REQUEST['residence_country'];
+			$fields['handling_amount'] = $_REQUEST['handling_amount'];
+			$fields['pending_reason'] = $_REQUEST['pending_reason'];
+			
+			#echo '<pre>'; print_r($fields);
+			#die;
+ 			$write->insert('zimbrabilling_invoices', $fields);
+ 			$write->commit();
+			/*************insert invoices ends here********************/
+			/*************send invoice email**********************/
+			 $invcustomerid = $arr[1];
+			 $invcustomer = Mage::getModel('customer/customer')->load($invcustomerid);
+			 $invcustomerdata = $invcustomer->getData();
+			 #print_r($invcustomerdata); die;
+		     $invread = Mage::getSingleton('core/resource')->getConnection('core_read');
+		   
+		     $invoicedetails = $invread->query("SELECT * FROM `zimbrabilling_invoices` WHERE txn_id = '".$_REQUEST['txn_id']."'")->fetchObject();
+		     $messageinvoice  ="";
+		     $messageinvoice .= '<body style="background:#F6F6F6; font-family:Verdana, Arial, Helvetica, sans-serif; font-size:12px; margin:0; padding:0;">
+<div style="background:#F6F6F6; font-family:Verdana, Arial, Helvetica, sans-serif; font-size:12px; margin:0; padding:0;">
+<table cellspacing="0" cellpadding="0" border="0" height="100%" width="100%">
+<tr>
+    <td align="center" valign="top" style="padding:20px 0 20px 0">
+        <!-- [ header starts here] -->
+        <table bgcolor="#FFFFFF" cellspacing="0" cellpadding="10" border="0" width="650" style="border:1px solid #E0E0E0;">
+            
+        <!-- [ middle starts here] -->
+            <tr>
+                <td valign="top">
+                    <h1 style="font-size:22px; font-weight:normal; line-height:22px; margin:0 0 11px 0;"">Hello, '.$invcustomerdata['firstname'].'&nbsp;'.$invcustomerdata['lastname'].'</h1>
+                    <p style="font-size:12px; line-height:16px; margin:0;">
+                        Thank you for your order from Main website store.
+                        
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <h2 style="font-size:18px; font-weight:normal; margin:0;">Your Invoice #'.$invoicedetails->id.'</h2>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <table cellspacing="0" cellpadding="0" border="0" width="650">
+                        <thead>
+                            <tr>
+                                <th align="left" width="325" bgcolor="#EAEAEA" style="font-size:13px; padding:5px 9px 6px 9px; line-height:1em;">Shipping Information:</th>
+                                <th width="10"></th>
+                                <th align="left" width="325" bgcolor="#EAEAEA" style="font-size:13px; padding:5px 9px 6px 9px; line-height:1em;">Payment Method:</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td valign="top" style="font-size:12px; padding:7px 9px 9px 9px; border-left:1px solid #EAEAEA; border-bottom:1px solid #EAEAEA; border-right:1px solid #EAEAEA;">'
+                              .$invoicedetails->name.'<br/>'.$invoicedetails->address_street.'<br/>'.$invoicedetails->address_city.','.$invoicedetails->address_state.'&nbsp;'.$invoicedetails->address_zip.'<br/>'.$invoicedetails->address_country.
+                            '</td>
+                            <td>&nbsp;</td>
+                            <td valign="top" style="font-size:12px; padding:7px 9px 9px 9px; border-left:1px solid #EAEAEA; border-bottom:1px solid #EAEAEA; border-right:1px solid #EAEAEA;">
+                                PayPal Express Checkout <br/>
+								Payer Email <br/>'.$invoicedetails->payer_email.'</td>
+                        </tr>
+                        </tbody>
+                    </table>
+              
+                </td>
+            </tr>
+			<tr>
+             <td>
+               <table width="650" cellspacing="0" cellpadding="0" border="0" style="border:1px solid #eaeaea">
+                 <thead>
+                   <tr>
+                     <th bgcolor="#EAEAEA" align="left" style="font-size:13px;padding:3px 9px">Item</th>
+                     <th bgcolor="#EAEAEA" align="left" style="font-size:13px;padding:3px 9px"></th>
+                     <th bgcolor="#EAEAEA" align="center" style="font-size:13px;padding:3px 9px">Qty</th>
+                     <th bgcolor="#EAEAEA" align="right" style="font-size:13px;padding:3px 9px">Subtotal</th>
+                   </tr>
+                 </thead>
+                 <tbody bgcolor="#F6F6F6">
+                   <tr>
+                     <td valign="top" align="left" style="padding:3px 9px;border-bottom:1px dotted #cccccc"><strong style="font-size:11px">'.$invoicedetails->item_name.'</strong></td>
+                     <td valign="top" align="left" style="font-size:11px;padding:3px 9px;border-bottom:1px dotted #cccccc"></td>
+                     <td valign="top" align="center" style="font-size:11px;padding:3px 9px;border-bottom:1px dotted #cccccc">1</td>
+                     <td valign="top" align="right" style="font-size:11px;padding:3px 9px;border-bottom:1px dotted #cccccc"><span>$'.$invoicedetails->payment_gross.'</span></td>
+                   </tr>
+                 </tbody>
+                 <tfoot>
+                   <tr>
+                     <td align="right" style="padding:3px 9px" colspan="3"> Subtotal </td>
+                     <td align="right" style="padding:3px 9px"><span>$'.$invoicedetails->payment_gross.'</span></td>
+                   </tr>
+                   <tr>
+                     <td align="right" style="padding:3px 9px" colspan="3"> Shipping &amp; Handling </td>
+                     <td align="right" style="padding:3px 9px"><span>$'.$invoicedetails->handling_amount.'</span></td>
+                   </tr>
+                   <tr>
+                     <td align="right" style="padding:3px 9px" colspan="3"><strong>Grand Total</strong></td>
+                     <td align="right" style="padding:3px 9px"><strong><span>$'.$invoicedetails->payment_gross.'</span></strong></td>
+                   </tr>
+                 </tfoot>
+               </table>
+             </td>
+            </tr>
+            <tr>
+                <td bgcolor="#EAEAEA" align="center" style="background:#EAEAEA; text-align:center;"><center><p style="font-size:12px; margin:0;">Thank you again, <strong>Main Website Store</strong></strong></p></center></td>
+            </tr>
+        </table>
+    </td>
+</tr>
+</table>
+</div>
+</body>
+';
+		   $mail = Mage::getModel('core/email');
+		   $mail->setToName($invcustomerdata['firstname']);
+		   $mail->setToEmail($invcustomerdata['email']);
+		   $mail->setBody($messageinvoice);
+		   $mail->setSubject(' Main Website Store');
+		   $mail->setFromName("Sales");
+		   $mail->setType('html');// YOu can use Html or text as Mail format
+		   #$mail->send();
+			
+			
+			/************invoice email ends here************************/
+			/**************update record in zimbrabilling_domains table******************/
+			  $connection = Mage::getSingleton('core/resource')->getConnection('core_write');
+			  $connection->beginTransaction();
+              
+			  $upgrade_price = $arr[4];
+			  #echo "UPDATE zimbrabilling_domains SET additional_mailboxes= additional_mailboxes +'".$arr[2]."',upgrade_price = upgrade_price+ '".$upgrade_price."',mailboxes = mailboxes+'".$arr[2]."' WHERE customerid = '".$arr[1]."' AND domain = '".$arr[0]."'";
+			  #die;
+			  $connection->query("UPDATE zimbrabilling_domains SET additional_mailboxes= additional_mailboxes +'".$arr[2]."',upgrade_price = upgrade_price+ '".$upgrade_price."',mailboxes = mailboxes+'".$arr[2]."' WHERE customerid = '".$arr[1]."' AND domain = '".$arr[0]."'");
+			  $connection->commit();
+			  #die;
+			/*************update ends here**********************/
+			
+			/**********send upgrade email***********************/  
+			  $mail = Mage::getModel('core/email');
+			  $customer = Mage::getModel('customer/customer')->load($arr[1]);
+			  $firstname = $customer->getFirstname();
+			  $lastname = $customer->getLastname();
+			  $customername = $firstname.'&nbsp;'.$lastname;
+			  $customeremail = $customer->getEmail();
+			  $totalmailboxes = $arr[2] + $arr[3];
+			  $message .='<body style="background:#F6F6F6; font-family:Verdana, Arial, Helvetica, sans-serif; font-size:12px; margin:0; padding:0;">
+<div style="background:#F6F6F6; font-family:Verdana, Arial, Helvetica, sans-serif; font-size:12px; margin:0; padding:0;">
+<table cellspacing="0" cellpadding="0" border="0" height="100%" width="100%">
+<tr>
+    <td align="center" valign="top" style="padding:20px 0 20px 0">
+        <!-- [ header starts here] -->
+        <table bgcolor="#FFFFFF" cellspacing="0" cellpadding="10" border="0" width="650" style="border:1px solid #E0E0E0;">
+            
+        <!-- [ middle starts here] -->
+            <tr>
+                <td valign="top">
+                    <h1 style="font-size:22px; font-weight:normal; line-height:22px; margin:0 0 11px 0;"">Hello, '.$customername.'</h1>
+                    <p style="font-size:12px; line-height:16px; margin:0;">Below are the details of your mailboxes.</p>
+                </td>
+                <tr>
+                 <td>
+                  <table cellspacing="0" cellpadding="0" border="0" width="650">
+                        <thead>
+                            <tr>
+                                <th align="left" width="325" bgcolor="#EAEAEA" style="font-size:13px; padding:5px 9px 6px 9px; line-height:1em;">Information:</th>
+                                <th width="10"></th>  
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td valign="top" style="font-size:12px; padding:7px 9px 9px 9px; border-left:1px solid #EAEAEA; border-bottom:1px solid #EAEAEA; border-right:1px solid #EAEAEA;">
+                                <ul style="list-style:none;line-height:22px;margin:0px;padding:0px;">
+                                 <li> Name : '.$firstname.'&nbsp;'.$lastname.'</li>
+								 <li>Domain : '.$arr[0].'</li>
+								 <li>Additional mailboxes : '.$arr[2].'</li>
+								 <li>Total mailboxes :'.$totalmailboxes.'</li>
+                                </ul> 
+                            </td>
+                            <td>&nbsp;</td>
+                            
+                        </tr>
+                        </tbody>
+                    </table>
+                 </td>
+                </tr>
+            </tr>  
+        </table>
+    </td>
+</tr>
+</table>
+</div>
+</body>';
+
+         	$mail->setToName($firstname.' '.$lastname);
+			$mail->setToEmail($customeremail);
+			$mail->setBody($message);
+			$mail->setSubject('Upgrade Mailboxes Notification');
+			//$mail->setFromEmail('no-reply@laitkor.com');
+			$mail->setFromName("Notification");
+			$mail->setType('html');// YOu can use Html or text as Mail format.
+			
+			$mail->send();
+			/*************mail ends here**************/?>
+            <script>
+              window.location.href = 'upgrade?param=upgradecomplete';
+            </script>
+           
+		
+<?php }else{
+  if(isset($_POST['went']) && $_POST['went'] == 'Submit'){
+		 $zmb_id = $_POST['userdomains'];
+		 $resource = Mage::getSingleton('core/resource');
+		 $read= $resource->getConnection('core_read');			  
+  } 
+      $customer = Mage::getSingleton('customer/session')->getCustomer();
+	  $customerid = $customer->getId();
+	  $resource = Mage::getSingleton('core/resource');
+	  $read= $resource->getConnection('core_read');
+	  $counthello = $read->query("SELECT * FROM zimbrabilling_domains WHERE customerid = '".$customerid."'")->fetchAll();
+?>
+
+<?php if(!isset($_GET['param'])){?> 
+  <div class="zm_intro">
+   <p>Improve productivity and collaboration throughout your organization with additional mailboxes for all of your employees. Choose to add more Starter plans OR add Business Professional mailboxes to experience the full suite of features. You must select one or the other.</p>
+ 
+     <div style="width:96% !important;margin:10px;padding:10px;background:#fff;">
+      <?php if ($this->helper('customer')->isLoggedIn() ) {?>
+     <?php if(isset($msg) && ($msg!='')): echo $msg; endif;?>
+      <?php if(count($counthello) >0){?>
+     <?php if(!$this->getRequest()->getParam('page')){?> 
+       <div><h2>Additional Mailboxes</h2></div>
+         <h3 style="margin-top:10px;margin-bottom:10px;">Select domain to increase number of mailboxes:</h3>
+         <form action="<?php echo $this->getDisplaymailboxUrl();?>" method="post" id="myform"  onsubmit="return false;">
+          <input name="form_key" type="hidden" value="<?php echo Mage::getSingleton('core/session')->getFormKey() ?>" />
+		     <select name="userdomains" onchange="displayaccounts(this.value);" id="userdomains" class="selectplan" title="Select domain">
+               <option value="0">Select domain</option>
+               <?php for($i=0;$i<count($counthello);$i++){?>
+               <option value="<?php echo $counthello[$i]['id'];?>" <?php if(isset($_POST['userdomains'])&& ($_POST['userdomains'] == $counthello[$i]['id'])){?> selected="selected"<?php }?>><?php echo $counthello[$i]['domain'];?></option>
+               <?php }?>
+             </select>
+           <div style="padding-top:10px;margin-left:76px;display:block;clear:both;">
+             <input type="submit" name="went" value="Submit" id="went" class="nav_zm" onclick="check('<?php echo $counthello[$i]['id'];?>');" />
+           </div>
+           
+       </form>
+       
+<?php if(isset($_POST['userdomains'])){
+	      #print_r($_POST);
+	      $zmb_id = $_POST['userdomains'];
+	      $getdata = $read->query("SELECT * FROM zimbrabilling_domains WHERE id = '".$zmb_id."'")->fetchObject();
+		  # print_r($getdata);
+		  $permailbox = $read->query("SELECT * FROM `zimbrabilling_zmb` WHERE zmb_id = '".$getdata->planid."'")->fetchObject();
+		  $billingcycle = $read->query("SELECT * FROM `zimbrabilling_cycles` WHERE id = '".$getdata->billingcycle."'")->fetchObject();
+		  #print_r($billingcycle);
+		  $domain = $getdata->domain;
+		  $host = parse_url($domain, PHP_URL_HOST);
+	      $domain_name = preg_replace('/^(www\.)/i', '', $host); 
+     
+          #echo $getdata->expiry_date;
+		  $currentdate = NOW();
+		  $date1 = strtotime($getdata->expiry_date);
+		  #echo '<br/>';  
+     	  $date2 = strtotime($currentdate);
+		  #echo date('d-m-Y',$date1);
+		  #echo '<br/>';
+		  #echo date('d-m-Y',$date2);
+		  if($date1 >=$date2){ #echo 'valid';
+		 
+ ?>
+   <div style="margin-bottom: 24px;margin-top: 12px;width: 250px;">
+	  <form action="<?php echo $this->getPostUrlMailbox()?>" method="post" id="myformupgrade" name="myformupgrade"> 
+        <input type="hidden" name="planid" id="planid" value="<?php echo $getdata->planid; ?>" />
+        <input type="hidden" name="title" id="billingcycle" value="<?php echo $getdata->billingcycle; ?>" />
+        <input type="hidden" name="order_id" value="<?php echo $zmb_id; ?>" />
+        <input type="hidden" name="details" />
+        <span><label><b>Enter number of MailBoxes to add:</b></label>
+        <input type="text" value="" name="nomailbox" class="required number" style="display: block;width: 55px;margin-top:15px;float:left;"/>
+         <div class="clear"></div>
+        <p style="margin-top:11px;width:182px;"><strong>@  <?php echo $billingcycle->per_mailbox_price; ?> per mailbox</strong></p>
+       
+        </span>
+         <br/>          
+       <input type="submit" name="upgradationx"  value="Upgrade" class="nav_zm" style="margin-top:10px !important;" />
+   </form>
+   </div>
+   <?php }else{?>
+      <p style="margin-top:10px;">Your account has been suspended for this domain !!! Please renew your account. Click here <a href="/zmb?step=3&customerid=<?php echo $getdata->customerid;?>&domain=<?php echo $getdata->domain;?>" class="zmb_login_reg">Renew</a> to renew your plan.</p>
+   <?php }?>
+<?php  }?>
+<?php }?>
+   <?php if($this->getRequest()->getParam('page') ){
+	        $configValue = Mage::getStoreConfig('zmb/view/items_per_page');
+			$mysessiondetails = Mage::getModel('core/session')->getData();
+			#echo '<pre>'; print_r($mysessiondetails);
+			$customer = Mage::getSingleton('customer/session')->getCustomer();
+	  		$customerid = $customer->getId();
+			$custom_arr = $mysessiondetails['domain'].'=>'.$customerid.'=>'.$mysessiondetails['additionalmailboxes'].'=>'.$mysessiondetails['earliermailboxes'].'=>'.$mysessiondetails['totalprice'];?>
+   
+     <div class="zm_shoppingcart" style="padding-left:20px !important;padding-bottom:15px;background:#fff;margin-top:20px;line-height:30px;padding-bottom:20px;margin-left:50px;width:85% !important;margin-bottom:30px;padding-top:20px;"> 
+       <h2 style="background: none repeat scroll 0 0 #D4EEF5;margin: 0 auto;padding-bottom: 10px; padding-top: 12px;text-align: center;width: 675px;">Below are the details for the additional mailboxes</h2>
+      <ul>    
+        <li><b class="zm_list_b">Plan opted by you:</b>&nbsp;&nbsp;<?php echo $mysessiondetails['planname'];?></li>
+        <li><b class="zm_list_b">Total Mailboxes:</b>&nbsp;&nbsp;<?php echo $mysessiondetails['mailboxes'];?></li>
+        <li><b class="zm_list_b">Additional Mailboxes:</b>&nbsp;&nbsp;<?php echo $mysessiondetails['additionalmailboxes'];?></li>
+        <li><b class="zm_list_b">Billing Cycle you Opted:</b>&nbsp;<?php echo $mysessiondetails['billingcycle'];?></li>
+        <li><b class="zm_list_b">Per Mailbox Price:</b>&nbsp;<?php echo $mysessiondetails['permailboxprice'];?></li>
+        <li><b class="zm_list_b">Total amount:</b>&nbsp;&nbsp;<?php echo '$'.$mysessiondetails['totalprice'];?></li>
+      </ul>
+       
+       <form action="https://www.paypal.com/cgi-bin/webscr" method="post" id="myform" name="myform">
+		  <input type="hidden" name="orderconfirm" />
+          <input type="hidden" name="customerid" value="<?php $customerid;?>" />
+          <input type="hidden" name="cmd" value="_xclick">  
+          <input type="hidden" name="business" value="<?php  echo $configValue;?>">    
+          <input type="hidden" name="amount" value="<?php echo $mysessiondetails['totalprice'];?>" /> 
+          <input type="hidden" name="item_name" value="<?php echo $mysessiondetails['planname'];?>" />
+          <input type="hidden" name="item_number" value="<?php echo $mysessiondetails['planid']; ?>" /> 
+              
+          <input type="hidden" name="no_shipping" value="0">  
+          <input type="hidden" name="no_note" value="1">  
+          <input type="hidden" name="currency_code" value="USD">  
+          <input type="hidden" name="lc" value="AU">  
+          <input type="hidden" name="bn" value="PP-BuyNowBF">  
+          <input type="hidden" name="custom" value="<?php echo $custom_arr;?>" />
+          <input type="hidden" name="return" value="<?php echo 'http://'.$_SERVER['SERVER_NAME']?>/upgrade">
+          <input type="hidden" name="notify_url" value="<?php echo 'http://'.$_SERVER['SERVER_NAME'];?>" />
+          <a href="/upgrade" class="zmb_login_reg" style="cursor:default;">Back</a>&nbsp;&nbsp;
+           <input type="submit" name="upgrade" value="Pay Now" class="nav_zm" />
+         </form>  
+         </div>
+        
+   <?php }?>
+   <?php }else{?>
+   <p>You have not purchased a plan yet .<a href="<?php echo 'http://'.$_SERVER['SERVER_NAME'].'/zmb'; ?>" class="zmb_login_reg">Click here</a> to purchase plan.</p>
+   <?php }?>
+   <?php }else{ ?>
+	  <p>Before you move forward with the process we require you to login to add mailboxes.Click here to login <a href="<?php echo Mage::getUrl('customer/account/login');?>" class="zmb_login_reg">Login</a></p>
+      <p>If you don't have an account as of yet, Click here to create one <a href="<?php echo Mage::getUrl('customer/account/create');?>" class="zmb_login_reg">Register</a></p> 
+  <?php }?>
+   </div>
+   
+   
+   </div>
+ <?php }?>
+<?php }?>
+  <?php if(isset($_GET['param'])){?>          
+<div class="zm_intro">			
+<p style="font-weight:bold;color:#3D6611;">Mailboxes upgraded successfully !!</p>
+<p>An email has been sent to your email-id. Please check for the details of the additional mailboxes.</p>
+<p>Now Click on <a href="<?php echo $this->getUrl('mailboxes')?>" class="zmb_login_reg">Create mailboxes</a> to create more accounts or <a href="<?php echo 'http://'.$_SERVER['SERVER_NAME'].'/zmb'; ?>" class="zmb_login_reg">Click here</a> to purchase a plan.</p>			
+</div>	
+<?php }?>  
+</div>
+<style>
+label.error{
+/*margin-left: 0px !important;
+text-align:left !important;
+margin-top:10px;*/
+    /*display: inline-block;*/
+    font-size: 12px;
+    margin-left: -23px !important;
+    margin-top: 15px;
+    text-align: left !important;
+    width: 300px;
+	
+}
+.breadcrumbs{
+	display:none !important;	
+}
+
+@-moz-document url-prefix() { 
+  span.selectplan{
+	margin-left:40px !important;
+  }
+  
+  .selectplan {
+	  margin-left: -165px !important;
+  }
+}
+</style>

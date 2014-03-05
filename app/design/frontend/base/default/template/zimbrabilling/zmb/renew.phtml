@@ -1,0 +1,332 @@
+<script src="/js/zimbrabilling/js/jquery.js"></script>
+<div id="zm_main">
+<div class="zm_page-title">
+     <h2 class="color_blue" style="text-align:center; font-family: georgia;font-size: 24px;"><b>HOSTED MAILBOX BILLING</b></h2>
+    <h3 class="color_blue"><p style="text-align:center;">Sharing Files, Documents, Calendars, Contacts with Colleagues Inside and </p><p style="text-align:center;"> Outside your Organization Made Easier than Ever Before!</p></h3>
+</div>
+  <?php 
+  if(isset($_REQUEST) && ($_REQUEST['txn_id']!='')){
+  	#echo '<pre>'; print_r($_REQUEST);
+	#die;
+	  #print_r($_REQUEST['custom']);
+	  		$arr = explode("=>",$_REQUEST['custom']);
+			#print_r($arr);
+			/**************insert in invoices table****************************/
+		    $write = Mage::getSingleton('core/resource')->getConnection('core_write');
+			$fields = array();
+			$fields['name']= $_REQUEST['first_name'].' '.$_REQUEST['last_name'];
+			#$fields['last_name'] = $_REQUEST['last_name'];
+			$fields['payment_date']= date('M d,Y H:i:s A',strtotime($_REQUEST['payment_date']));
+			$fields['payment_status']= $_REQUEST['payment_status'];
+			$fields['address_street']= $_REQUEST['address_street'];
+			$fields['address_city']= $_REQUEST['address_city'];
+			$fields['address_country'] = $_REQUEST['address_country'];
+			$fields['business_email'] = $_REQUEST['business'];
+			$fields['payer_email'] = $_REQUEST['payer_email'];
+			$fields['txn_id'] = $_REQUEST['txn_id'];
+			$fields['payment_type'] = $_REQUEST['payment_type'];
+			$fields['receiver_email'] = $_REQUEST['receiver_email'];
+			$fields['receiver_id'] = $_REQUEST['receiver_id'];
+			$fields['item_name'] = $_REQUEST['item_name'];
+			$fields['payment_gross'] = $_REQUEST['payment_gross'];
+			$fields['item_number'] = $_REQUEST['item_number'];
+			$fields['protection_eligibility'] = $_REQUEST['protection_eligibility'];
+			$fields['address_status'] = $_REQUEST['address_status'];
+			$fields['customerid'] = $arr[1];
+			$fields['payer_id'] = $_REQUEST['payer_id'];
+			$fields['payer_status'] = $_REQUEST['payer_status'];
+			$fields['address_zip'] = $_REQUEST['address_zip'];
+			$fields['address_country_code'] = $_REQUEST['address_country_code'];
+			$fields['address_name'] = $_REQUEST['address_name'];
+			$fields['address_state'] = $_REQUEST['address_state'];
+			$fields['residence_country'] = $_REQUEST['residence_country'];
+			$fields['handling_amount'] = $_REQUEST['handling_amount'];
+			$fields['pending_reason'] = $_REQUEST['pending_reason'];
+			
+			#echo '<pre>'; print_r($fields); echo '</pre>';
+			#die;
+ 			$write->insert('zimbrabilling_invoices', $fields);
+ 			$write->commit();
+			/*************insert invoices ends here********************/
+			
+			/***************update customer's plan expiry date**************************/
+			$read = Mage::getSingleton('core/resource')->getConnection('core_read');
+			$data = $read->query("SELECT * FROM `zimbrabilling_domains` WHERE customerid = '".$arr[1]."' AND domain = '".$arr[0]."'")->fetchObject();
+			$customer = Mage::getModel('customer/customer')->load($arr[1]);
+			$regdomain = $data->domain;
+			/**********activate accounts in zimbra************************/
+			  $path=Mage::getBaseDir('code');
+			  require_once($path.'/zm/config.php');
+			  require_once($path.'/zm/Zm/Auth.php');
+			  require_once($path.'/zm/Zm/Account.php');
+			  require_once($path.'/zm/Zm/Domain.php');
+			  require_once($path.'/zm/Zm/Server.php');  
+			  
+			  $auth = new Zm_Auth($zimbraserver, $zimbraadminemail, $zimbraadminpassword);
+			  $l = $auth->login();
+			  if(is_a($l, "Exception")) {
+					  echo "Error : cannot login to $zimbraserver :-(\n";
+					  print_exception($l);
+					  exit();
+			  }
+			 $currdate = date('Y-m-d',strtotime(NOW()));
+			 $datetime1 = $currdate;
+			 #echo '<br/>';
+			 #$datetime1 = '2014-05-21';
+			 $datetime2 = date('Y-m-d',strtotime($data->expiry_date));
+			 #die;
+			 #if($datetime1>$datetime2){
+				  if($l){
+					$accountManager = new Zm_Account($auth);  
+					#echo 'expired';
+					$expireddata = $read->query("SELECT * FROM `zimbrabilling_mailboxes` WHERE domain = '".$arr[0]."'")->fetchAll();
+					#print_r($expireddata);
+					
+					$customerdata = $customer->getData();
+					#$customeremail = $customer->getEmail();
+					$fname = $customerdata['firstname'];
+					$lname = $customerdata['lastname'];
+					
+					$host = parse_url($regdomain, PHP_URL_HOST);
+	  	    		$domain_name = preg_replace('/^(www\.)/i', '', $host);
+					#$expireddata = $read->query("SELECT * FROM `zimbrabilling_mailboxes` WHERE domain = '".$s['domain']."'")->fetchAll();
+					#print_r($expireddata);
+					$sql1 = $read->query("SELECT * FROM `zimbrabilling_domains` WHERE domain = '".$arr[0]."'")->fetchObject();
+					if($sql1->email_prefered!=''){
+						$email_prefered = $sql1->email_prefered;
+						$account_name = $email_prefered."@".$domain_name;
+					}else{
+						$account_name=strtolower($fname).".".strtolower($lname)."@".$domain_name;
+					}
+					#echo $account_name; 
+					#die;
+					$accountManager->setAccountStatus($account_name,"active");
+					foreach($expireddata as $e){
+						
+						// check if account exists
+						
+						$accountManager->setAccountStatus($e['email'],"active");
+					 }
+				  }
+		     #}
+             #die;
+			/***********code ends here***********************/  
+			  $planprice = $read->query("SELECT * FROM `zimbrabilling_cycles` WHERE planid = '".$data->planid."' AND id = '".$data->billingcycle."'")->fetchObject();
+			  
+			  $write = Mage::getSingleton('core/resource')->getConnection('core_write');
+			  $write->beginTransaction();
+			  #echo "UPDATE zimbrabilling_domains SET update_time = '".NOW()."',expirydate = '".$newexpirydate."' WHERE customerid = '".$arr[1]."' AND domain = '".$arr[0]."'";
+			  $plan_price = '$'.$_REQUEST['payment_gross'];
+			  if(isset($arr[3]) && $arr[3] == 'yes/'){
+				  $sql = $read->query("SELECT * FROM `zimbrabilling_cycles` WHERE planid = '".$_REQUEST['item_number']."' AND id = '".$arr[4]."'")->fetchObject();
+				 
+			      $select = $read->query("SELECT * FROM `zimbrabilling_domains` WHERE customerid = '".$arr[1]."' AND domain = '".$arr[0]."'")->fetchObject();
+				   $expirydate = $select->expiry_date;
+				   $detail = $sql->duration;
+				   if($detail == 'monthly'){
+						$dateOneMonthAdded = strtotime(date("Y-m-d", strtotime($expirydate)) . "+1 month");
+					}
+				   if($detail == 'anually'){
+					   $dateOneMonthAdded = strtotime(date("Y-m-d", strtotime($expirydate)) . "+12 month");
+				   }
+				   if($detail == 'semi-anually'){
+					   $dateOneMonthAdded = strtotime(date("Y-m-d", strtotime($expirydate)) . "+6 month");
+				   }
+				   if($detail == 'quaterly'){
+					   $dateOneMonthAdded = strtotime(date("Y-m-d", strtotime($expirydate)) . "+4 month");
+				   }
+				   $newexpirydate = date('Y-m-d',$dateOneMonthAdded); 
+				   #echo $newexpirydate;
+				   #echo "UPDATE zimbrabilling_domains SET update_time = '".NOW()."',expiry_date = '".$newexpirydate."',plan_price = '".$plan_price."',mailboxes = '".$arr[2]."',planid = '".$_REQUEST['item_number']."',plan_title = '".$_REQUEST['item_name']."',additional_mailboxes = '0' WHERE customerid = '".$arr[1]."' AND domain = '".$arr[0]."'"; 
+				   #die;
+				   $write->query("UPDATE zimbrabilling_domains SET update_time = '".NOW()."',expiry_date = '".$newexpirydate."',plan_price = '".$sql->price."',mailboxes = '".$arr[2]."',planid = '".$_REQUEST['item_number']."',plan_title = '".$_REQUEST['item_name']."',additional_mailboxes = '0',upgrade_price = '',billingcycle = '".$arr[4]."',duration = '".$sql->duration."',renew_status = '',plan_mailboxes = '".$arr[2]."' WHERE customerid = '".$arr[1]."' AND domain = '".$arr[0]."'");
+			  }elseif(isset($arr[3]) && $arr[3] == 'no/'){
+				   $sql1 = $read->query("SELECT * FROM `zimbrabilling_cycles` WHERE planid = '".$_REQUEST['item_number']."' AND id = '".$arr[4]."'")->fetchObject();
+				 
+			       $select = $read->query("SELECT * FROM `zimbrabilling_domains` WHERE customerid = '".$arr[1]."' AND domain = '".$arr[0]."'")->fetchObject();
+				   $expirydate = $select->expiry_date;
+				   $detail = $sql1->duration;
+				   if($detail == 'monthly'){
+						$dateOneMonthAdded = strtotime(date("Y-m-d", strtotime($expirydate)) . "+1 month");
+					}
+				   if($detail == 'anually'){
+					   $dateOneMonthAdded = strtotime(date("Y-m-d", strtotime($expirydate)) . "+12 month");
+				   }
+				   if($detail == 'semi-anually'){
+					   $dateOneMonthAdded = strtotime(date("Y-m-d", strtotime($expirydate)) . "+6 month");
+				   }
+				   if($detail == 'quaterly'){
+					   $dateOneMonthAdded = strtotime(date("Y-m-d", strtotime($expirydate)) . "+4 month");
+				   }
+				   $newexpirydate = date('Y-m-d',$dateOneMonthAdded); 
+				   #echo $newexpirydate;
+				  #die;
+				 $mergenotlmailboxes = $select->additional_mailboxes + $arr[2];
+				 $upgradeprice = substr_replace($sql1->per_mailbox_price," ",0,1) * $select->additional_mailboxes;
+				 #echo "UPDATE zimbrabilling_domains SET update_time = '".NOW()."',expiry_date = '".$newexpirydate."',plan_price = '".$plan_price."',mailboxes = '".$mergenotlmailboxes."',planid = '".$_REQUEST['item_number']."',plan_title = '".$_REQUEST['item_name']."',plan_mailboxes = '".$arr[2]."',billingcycle = '".$arr[4]."',duration = '".$sql1->duration."',renew_status = '' WHERE customerid = '".$arr[1]."' AND domain = '".$arr[0]."'";
+				 #die;
+				 $write->query("UPDATE zimbrabilling_domains SET update_time = '".NOW()."',expiry_date = '".$newexpirydate."',plan_price = '".$sql1->price."',mailboxes = '".$mergenotlmailboxes."',planid = '".$_REQUEST['item_number']."',plan_title = '".$_REQUEST['item_name']."',plan_mailboxes = '".$arr[2]."',billingcycle = '".$arr[4]."',duration = '".$sql1->duration."',renew_status = '',upgrade_price = '".$upgradeprice."' WHERE customerid = '".$arr[1]."' AND domain = '".$arr[0]."'");
+			  }elseif(isset($arr[3]) && $arr[3] == 'degrade/'){
+				  
+				  
+				  $sql = $read->query("SELECT * FROM `zimbrabilling_cycles` WHERE planid = '".$_REQUEST['item_number']."' AND id = '".$arr[4]."'")->fetchObject();
+				 
+			       $select = $read->query("SELECT * FROM `zimbrabilling_domains` WHERE customerid = '".$arr[1]."' AND domain = '".$arr[0]."'")->fetchObject();
+				   $expirydate = $select->expiry_date;
+				   $detail = $sql->duration;
+				   if($detail == 'monthly'){
+						$dateOneMonthAdded = strtotime(date("Y-m-d", strtotime($expirydate)) . "+1 month");
+					}
+				   if($detail == 'anually'){
+					   $dateOneMonthAdded = strtotime(date("Y-m-d", strtotime($expirydate)) . "+12 month");
+				   }
+				   if($detail == 'semi-anually'){
+					   $dateOneMonthAdded = strtotime(date("Y-m-d", strtotime($expirydate)) . "+6 month");
+				   }
+				   if($detail == 'quaterly'){
+					   $dateOneMonthAdded = strtotime(date("Y-m-d", strtotime($expirydate)) . "+4 month");
+				   }
+				   $newexpirydate = date('Y-m-d',$dateOneMonthAdded); 
+				   #echo $newexpirydate;
+				   #echo "UPDATE zimbrabilling_domains SET update_time = '".NOW()."',expiry_date = '".$newexpirydate."',plan_price = '".$plan_price."',mailboxes = '".$arr[2]."',planid = '".$_REQUEST['item_number']."',plan_title = '".$_REQUEST['item_name']."',additional_mailboxes = '0' WHERE customerid = '".$arr[1]."' AND domain = '".$arr[0]."'"; 
+				   #die;
+				   #echo $arr[2];
+				   $addmailboxes = $select->additional_mailboxes + $arr[2];
+				   $upgrade_price = $select->additional_mailboxes * substr_replace($sql->per_mailbox_price," ",0,1);
+				   #echo "UPDATE zimbrabilling_domains SET update_time = '".NOW()."',expiry_date = '".$newexpirydate."',plan_price = '".$sql->price."',mailboxes = '".$addmailboxes."',planid = '".$_REQUEST['item_number']."',plan_title = '".$_REQUEST['item_name']."',billingcycle = '".$arr[4]."',duration = '".$sql->duration."',renew_status = '',plan_mailboxes = '".$arr[2]."',upgrade_price = '".$upgrade_price."' WHERE customerid = '".$arr[1]."' AND domain = '".$arr[0]."'"; die;
+				   $write->query("UPDATE zimbrabilling_domains SET update_time = '".NOW()."',expiry_date = '".$newexpirydate."',plan_price = '".$sql->price."',mailboxes = '".$addmailboxes."',planid = '".$_REQUEST['item_number']."',plan_title = '".$_REQUEST['item_name']."',billingcycle = '".$arr[4]."',duration = '".$sql->duration."',renew_status = '',plan_mailboxes = '".$arr[2]."',upgrade_price = '".$upgrade_price."' WHERE customerid = '".$arr[1]."' AND domain = '".$arr[0]."'");
+			       $write->commit();
+				  
+			  }else{
+				  	$expirydate = $data->expiry_date;
+					$detail = $data->duration;
+					#echo $detail;
+					#die;
+				   if($detail == 'monthly'){
+					   
+						$dateOneMonthAdded = strtotime(date("Y-m-d", strtotime($expirydate)) . "+1 month");
+					}
+					if($detail == 'anually'){
+					  
+						$dateOneMonthAdded = strtotime(date("Y-m-d", strtotime($expirydate)) . "+12 month");
+					}
+					if($detail == 'semi-anually'){
+						
+						$dateOneMonthAdded = strtotime(date("Y-m-d", strtotime($expirydate)) . "+6 month");
+					}
+					if($detail == 'quaterly'){
+						$dateOneMonthAdded = strtotime(date("Y-m-d", strtotime($expirydate)) . "+4 month");
+					}
+					$newexpirydate = date('Y-m-d',$dateOneMonthAdded);
+				 #echo "UPDATE zimbrabilling_domains SET update_time = '".NOW()."',expiry_date = '".$newexpirydate."',plan_price = '".$plan_price."' WHERE customerid = '".$arr[1]."' AND domain = '".$arr[0]."'";  
+			     $write->query("UPDATE zimbrabilling_domains SET update_time = '".NOW()."',expiry_date = '".$newexpirydate."',plan_price = '".$plan_price."',renew_status = '' WHERE customerid = '".$arr[1]."' AND domain = '".$arr[0]."'");
+			  }
+			  $write->commit();
+			  #die;
+			  /***********update ends here**********************/
+			  
+			  /************send package renewed mail******************/
+			  $mail = Mage::getModel('core/email');
+			  #$customer = Mage::getModel('customer/customer')->load($arr[1]);
+			  #echo '<pre>';print_r($customer); 
+			  $firstname = $customer->getFirstname();
+			  $lastname = $customer->getLastname();
+			  $customername = $firstname.'&nbsp;'.$lastname;
+			  $customeremail = $customer->getEmail();
+			  #die;
+			  $finaldetails = $read->query("SELECT * FROM `zimbrabilling_domains` WHERE customerid = '".$arr[1]."' AND domain = '".$arr[0]."'")->fetchObject();
+			  $finalcycle = $read->query("SELECT * FROM `zimbrabilling_cycles` WHERE id = '".$finaldetails->billingcycle."'")->fetchObject();
+			  $message = '';
+			  $message .='<body style="background:#F6F6F6; font-family:Verdana, Arial, Helvetica, sans-serif; font-size:12px; margin:0; padding:0;">
+<div style="background:#F6F6F6; font-family:Verdana, Arial, Helvetica, sans-serif; font-size:12px; margin:0; padding:0;">
+<table cellspacing="0" cellpadding="0" border="0" height="100%" width="100%">
+<tr>
+    <td align="center" valign="top" style="padding:20px 0 20px 0">
+        <!-- [ header starts here] -->
+        <table bgcolor="#FFFFFF" cellspacing="0" cellpadding="10" border="0" width="650" style="border:1px solid #E0E0E0;">
+            
+        <!-- [ middle starts here] -->
+            <tr>
+                <td valign="top">
+                    <h1 style="font-size:22px; font-weight:normal; line-height:22px; margin:0 0 11px 0;"">Hello, '.$customername.'</h1>
+                    <p style="font-size:12px; line-height:16px; margin:0;">Your Package has been renewed till date '.date('F d,Y',strtotime($newexpirydate)).'.</p>
+                </td>
+                <tr>
+                 <td>
+                  <table cellspacing="0" cellpadding="0" border="0" width="650">
+                        <thead>
+                            <tr>
+                                <th align="left" width="325" bgcolor="#EAEAEA" style="font-size:13px; padding:5px 9px 6px 9px; line-height:1em;">Domain Information:</th>
+                                <th width="10"></th>  
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td valign="top" style="font-size:12px; padding:7px 9px 9px 9px; border-left:1px solid #EAEAEA; border-bottom:1px solid #EAEAEA; border-right:1px solid #EAEAEA;">
+                                <ul style="list-style:none;line-height:22px;margin:0px;padding:0px;">
+                                 <li> <b>Name : </b>'.$firstname.'&nbsp;'.$lastname.'</li>
+								 <li> <b>Domain : </b>'.$arr[0].'</li>
+								 <li> <b>Plan: </b>'.$finaldetails->plan_title.'</li>
+								 <li> <b>Billing Cycle: </b>'.$finalcycle->title.'</li>
+								 <li> <b>Duration: </b>'.$finalcycle->duration.'</li>
+                                </ul> 
+                            </td>
+                            <td>&nbsp;</td>
+                            
+                        </tr>
+                        </tbody>
+                    </table>
+                 </td>
+                </tr>
+            </tr>  
+        </table>
+    </td>
+</tr>
+</table>
+</div>
+</body>';
+
+         	$mail->setToName($firstname.' '.$lastname);
+			$mail->setToEmail($customeremail);
+			$mail->setBody($message);
+			$mail->setSubject('Package Renewed Notification');
+			//$mail->setFromEmail('no-reply@.com');
+			$mail->setFromName("Notification");
+			$mail->setType('html');// YOu can use Html or text as Mail format.
+			
+			$mail->send();
+			/*************mail ends here**************/?>
+            <?php $variable = md5(uniqid(mt_rand(), true));
+			  #header("Location: renew?param=".$variable);
+			?>  
+            <script>
+/*			$(document).ready(function(){
+			 var param = '<?php #echo $variable; ?>';
+			});*/
+             window.location.href = 'renew?param=renewcomplete';
+            </script>
+    
+<?php  }else{?>
+    <script>
+$(document).ready(function(){
+	$.post('<?php echo $this->getrenewUrl();?>');
+});
+
+</script>
+  <?php }?>
+
+  <?php if(isset($_GET['param'])){
+	     
+	  ?>        
+<div class="zm_intro">			
+<p style="font-weight:bold;color:#3D6611;">Plan renewed successfully !!</p>
+<p>An email has been sent to your email-id. Please check for the details of the mailboxes.</p>
+<p>Now Click on <a href="<?php echo $this->getUrl('mailboxes')?>" class="zmb_login_reg">Create Mailboxes</a> to create more accounts or <a href="<?php echo 'http://'.$_SERVER['SERVER_NAME'].'/zmb'; ?>" class="zmb_login_reg">Click here</a> to purchase a plan.</p>			
+</div>
+<?php }?>
+</div>   
+<style>
+.breadcrumbs{
+	display:none !important;	
+}
+</style>

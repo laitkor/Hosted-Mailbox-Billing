@@ -1,0 +1,251 @@
+<?php include_once "app/Mage.php"; 
+$invoiceId = $this->getRequest()->getParam('id'); 
+#echo $invoiceId;
+ $model = Mage::getModel('zimbrabilling_zmb/invoices');
+        if ($invoiceId) { 
+            $invoicedetails = $model->load($invoiceId);
+            #echo '<pre>';print_r($a);	  
+        }
+		#echo $invoicedetails['id'];
+		$customerid = $invoicedetails['customerid'];
+		
+		#echo $customerid;
+		$customer = Mage::getModel('customer/customer')->load($customerid);
+		
+		#echo '<pre>';print_r($customer->getData());
+		$customerdata = $customer->getData();
+		$groupid = $customerdata['group_id'];
+	/*	$urlString = Mage::helper('core/url')->getCurrentUrl();
+	  	$url = Mage::getSingleton('core/url')->parseUrl($urlString);
+	 	$path = $url->getPath();
+	  	echo $path;*/
+		#$a = Mage::helper("adminhtml")->getUrl("/admin/invoices/view");
+		#echo $a;
+?>
+
+<div class="content-header">
+  <h3 class="icon-head head-sales-order-invoice">Invoice <?php echo '#'.$invoicedetails['id'];?> | <?php echo $invoicedetails['payment_status'];?> | <?php echo $invoicedetails['payment_date'];?></h3>
+  <p class="form-buttons"> 
+      <!--<button style="" onclick="setLocation('http://localhost/magento/index.php/admin/invoices/index/key/eb0ef8c709c83cfecd28c1f1efa3baf5/')" class="scalable back" type="button" title="Back" id="id_1e4cd40b02838cc4aecdd60dad281068"><span><span><span>Back</span></span></span></button>-->
+      <button onclick="javascript:history.go(-1)" class="scalable back" type="button"><span>Back</span></button>
+      <button style="" onclick="sendmail('<?php echo $customerid;?>','<?php echo $invoiceId;?>');" class="scalable " type="button" title="Send Email" id=""><span><span><span>Send Email</span></span></span></button>
+   <!--   <button style="" onclick="setLocation('http://zimbramagento.stpi.com/index.php/admin/sales_order_invoice/cancel/invoice_id/208/key/04b73db6dc0e7d9d7f068e9e98d10f28/')" class="scalable delete" type="button" title="Cancel" id="id_19ec86138652479b5b17eb557a203b7c"><span><span><span>Cancel</span></span></span></button>
+    
+    <button style="" onclick="setLocation('http://zimbramagento.stpi.com/index.php/admin/sales_order_invoice/capture/invoice_id/208/key/41e0660d57ee46ad7621215be90c1a31/')" class="scalable save" type="button" title="Capture" id="id_2eabeff8f0c39de1369f66403882cd48"><span><span><span>Capture</span></span></span></button>
+    <button style="" onclick="setLocation('http://zimbramagento.stpi.com/index.php/admin/sales_order_invoice/print/invoice_id/208/key/068ed5443f1efc828bd5af21c34bcc6d/')" class="scalable save" type="button" title="Print" id="id_bd70ddcb963dc006b99740f2974a1bd4"><span><span><span>Print</span></span></span></button>--> 
+  </p>
+</div>
+<div class="box-left"> 
+  <!--Billing Address-->
+  <div class="entry-edit">
+    <div class="entry-edit-head">
+      <h4 class="icon-head head-payment-method">Payment Information</h4>
+    </div>
+    <fieldset>
+      <div>PayPal Express Checkout
+        <table>
+          <tbody>
+            <tr>
+              <td>Payer ID:</td>
+              <td><?php echo $invoicedetails['payer_id'];?></td>
+            </tr>
+            <tr>
+              <td>Payer Email:</td>
+              <td><?php echo $invoicedetails['payer_email'];?></td>
+            </tr>
+            <tr>
+              <td>Payer Status:</td>
+              <td><?php echo $invoicedetails['payer_status'];?></td>
+            </tr>
+            <tr>
+              <td>Payer Address Status:</td>
+              <td><?php echo $invoicedetails['address_status'];?></td>
+            </tr>
+            <tr>
+              <td>Merchant Protection Eligibility:</td>
+              <td><?php echo $invoicedetails['protection_eligibility'];?></td>
+            </tr>
+            <tr>
+              <td>Transaction ID:</td>
+              <td><?php echo $invoicedetails['txn_id'];?></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <!--<div>Order was placed using USD</div>-->
+    </fieldset>
+  </div>
+</div>
+<div class="box-right"> 
+  <!--Account Information-->
+  <div class="entry-edit">
+    <div class="entry-edit-head">
+      <h4 class="icon-head head-account">Account Information</h4>
+      <div class="tools"></div>
+    </div>
+    <div class="fieldset">
+      <div class="hor-scroll">
+        <table cellspacing="0" class="form-list">
+          <tbody>
+            <tr>
+              <td class="label"><label>Customer Name</label></td>
+              <td class="value"><strong><?php echo $customerdata['firstname'].' '.$customerdata['lastname'];?></strong></td>
+            </tr>
+            <tr>
+              <td class="label"><label>Email</label></td>
+              <td class="value"><a href="mailto:<?php echo $customerdata['email'];?>"><strong><?php echo $customerdata['email'];?></strong></a></td>
+            </tr>
+            <tr>
+              <td class="label"><label>Customer Group</label></td>
+              <td class="value"><strong>
+                <?php  // Get the Group Name the Customer is part of.
+    											$group_name = Mage::getModel('customer/group')->load($groupid)->getCode();
+		 echo $group_name;?>
+                </strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<div style="clear:both;"></div>
+<div class="box-left"> 
+  <!--Billing Address-->
+  <div class="entry-edit">
+    <div class="entry-edit-head">
+      <h4 class="icon-head head-billing-address">Billing Address</h4>
+      <!--<div class="tools"><a href="#">Edit</a></div>-->
+    </div>
+    <fieldset>
+      <address>
+      <?php echo $invoicedetails['name'];?><br>
+      <?php echo $invoicedetails['address_street'];?><br>
+        <?php echo $invoicedetails['address_city'].' ,'.$invoicedetails['address_state'].','.$invoicedetails['address_zip'];?><br>
+      <?php echo $invoicedetails['address_country'];?><br>
+      	
+      </address>
+    </fieldset>
+  </div>
+</div>
+<div class="box-right"> 
+  <!--Shipping Address-->
+  <div class="entry-edit">
+    <div class="entry-edit-head">
+      <h4 class="icon-head head-shipping-address">Shipping Address</h4>
+      <div class="tools"><!--<a href="http://zimbramagento.stpi.com/index.php/admin/sales_order/address/address_id/424/key/06b9ef52dc2b8deaabf767bdcbc1f6e0/">Edit</a>--></div>
+    </div>
+    <fieldset>
+      <address>
+      <?php echo $invoicedetails['name'];?><br>
+      <?php echo $invoicedetails['address_street'];?><br>
+        <?php echo $invoicedetails['address_city'].' ,'.$invoicedetails['address_state'].','.$invoicedetails['address_zip'];?><br>
+      <?php echo $invoicedetails['address_country'];?><br>
+      
+      </address>
+    </fieldset>
+  </div>
+</div>
+<div style="clear:both;"></div>
+
+<div class="box-left">
+<div class="entry-edit">
+  <div class="entry-edit-head">
+    <h4 class="icon-head head-products">Items Invoiced</h4>
+  </div>
+  <div id="invoice_item_container">
+    <div class="grid np">
+      <div class="hor-scroll">
+        <table cellspacing="0" class="data order-tables">
+          <colgroup>
+          <col>
+          <col width="1">
+          <col width="1">
+          <col width="1">
+          <col width="1">
+          <col width="1">
+          <col width="1">
+          </colgroup>
+          <thead>
+            <tr class="headings">
+              <th>Product</th>
+              <th>Price</th>
+              <th class="a-center">Qty</th>
+              <th><span class="nobr">Amount</span></th>
+            </tr>
+          </thead>
+          <tbody class="even">
+            <tr class="border">
+              <td><h5 class="title"><span id="order_item_224_title"><?php echo $invoicedetails['item_name'];?></span></h5></td>
+              <td class="a-right"><span class="price-excl-tax"> <span class="price">$<?php echo $invoicedetails['payment_gross'];?></span> </span> <br></td>
+              <td class="a-center">1</td>
+              <td class="a-right"><span class="price">$<?php echo $invoicedetails['payment_gross'];?></span></td>
+              
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <br>
+  </div>
+</div>
+</div>
+
+<div class="box-right">
+<div id="history_form" class="entry-edit">
+  <div class="entry-edit-head">
+    <h4>Invoice Totals</h4>
+  </div>
+  <div class="order-totals">
+    <table width="100%" cellspacing="0">
+      <colgroup>
+      <col>
+      <col width="1">
+      </colgroup>
+      <tfoot>
+        <tr class="0">
+          <td class="label"><strong>Grand Total</strong></td>
+          <td class="emph"><strong><span class="price">$<?php echo $invoicedetails['payment_gross'];?></span></strong></td>
+        </tr>
+      </tfoot>
+      <tbody>
+        <tr class="0">
+          <td class="label"> Subtotal </td>
+          <td><span class="price">$<?php echo $invoicedetails['payment_gross'];?></span></td>
+        </tr>
+        <tr class="1">
+          <td class="label"> Shipping &amp; Handling </td>
+          <td><span class="price">$0.00</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</div>
+<div style="clear:both;"></div>
+<script>
+$(document).ready(function(){
+		jQuery.noConflict();
+});
+function sendmail(customerid,invoiceId){
+	jQuery.noConflict();
+  //alert('testing');
+    if (confirm('Are you sure you want to send Invoice email to customer?')) {
+           //$("#tmm1").hide("slow");
+		   new Ajax.Request('<?php echo $this->getUrlsendmail() ?>', {
+            method:     'post',
+			parameters: {'id':customerid,'invoiceid':invoiceId},
+            onSuccess: function(transport){
+ 
+			  if (transport.responseText){
+				 // alert('Mail sent')
+				 jQuery("#messages").html('<ul class="messages"><li class="success-msg"><ul><li><span>The message has been sent.</span></li></ul></li></ul>');
+				 //$("#messages").fadeIn("slow");
+			  }
+            }
+        });	
+     }
+
+ // confirmSetLocation('Are you sure you want to send Invoice email to customer?', '<?php echo $this->getUrlsendmail();?>')
+}
+</script>

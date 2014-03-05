@@ -1,0 +1,134 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Module configuration
+ *
+ * @author Magento
+ */
+-->
+<config>
+    <modules>
+        <Zimbrabilling_Zmb>
+            <version>1.0.0.0.2</version>
+        </Zimbrabilling_Zmb>
+    </modules>
+    <global>
+        <models>
+            <zimbrabilling_zmb>
+                <class>Zimbrabilling_Zmb_Model</class>
+                <resourceModel>zmb_resource</resourceModel>
+            </zimbrabilling_zmb>
+            <zmb_resource>
+                <class>Zimbrabilling_Zmb_Model_Resource</class>
+                <entities>
+                    <zmb>
+                        <table>zimbrabilling_zmb</table>
+                    </zmb>
+					<invoices>
+						<table>zimbrabilling_invoices</table>
+					</invoices>	
+                </entities>
+            </zmb_resource>
+        </models>
+        <helpers>
+            <zimbrabilling_zmb>
+                <class>Zimbrabilling_Zmb_Helper</class>
+            </zimbrabilling_zmb>
+			 <customer>
+                <rewrite>
+                    <data>Zimbrabilling_Zmb_Helper_Datanew</data>
+                </rewrite>
+            </customer>
+        </helpers>
+
+        <blocks>
+            <zimbrabilling_zmb>
+                <class>Zimbrabilling_Zmb_Block</class>
+            </zimbrabilling_zmb>
+        </blocks>
+        <resources>
+            <zimbrabilling_zmb_setup>
+                <setup>
+                    <module>Zimbrabilling_Zmb</module>
+                    <class>Mage_Core_Model_Resource_Setup</class>
+                </setup>
+            </zimbrabilling_zmb_setup>
+        </resources>
+        <events>
+            <before_zmb_item_display>
+                <observers>
+                    <zimbrabilling_zmb>
+                        <class>zimbrabilling_zmb/observer</class>
+                        <method>beforeZmbDisplayed</method>
+                    </zimbrabilling_zmb>
+                </observers>
+            </before_zmb_item_display>				
+        </events>
+		<template>
+		  <email>
+                <customer_quote_email_exist_user_quote_template translate="label" module="zmb">
+                    <label>Existing User Quote Template</label>
+                    <file>quote/exist_user.html</file>
+                    <type>html</type>
+                </customer_quote_email_exist_user_quote_template>
+            </email>
+		</template>
+    </global>
+    <frontend>
+        <routers>
+            <zimbrabilling_zmb>
+                <use>standard</use>
+                <args>
+                    <module>Zimbrabilling_Zmb</module>
+                    <frontName>zmb</frontName>
+                </args>
+            </zimbrabilling_zmb>
+			<customer>
+                <args>
+                    <modules>
+                        <zimbrabilling_zmb before="Mage_Customer">Zimbrabilling_Zmb</zimbrabilling_zmb>
+                    </modules>
+                </args>
+            </customer>
+        </routers>
+        <layout>
+            <updates>
+                <zimbrabilling_zmb>
+                    <file>zimbrabilling_zmb.xml</file>
+                </zimbrabilling_zmb>
+            </updates>
+        </layout>
+    </frontend>
+    <admin>
+        <routers>
+            <adminhtml>
+                <args>
+                    <modules>
+                        <Zimbrabilling_Zmb before="Mage_Adminhtml">Zimbrabilling_Zmb_Adminhtml</Zimbrabilling_Zmb>
+                    </modules>
+                </args>
+            </adminhtml>
+        </routers>
+    </admin>
+    <adminhtml>
+        <layout>
+            <updates>
+                <zimbrabilling_zmb>
+                    <file>zimbrabilling_zmb.xml</file>
+                </zimbrabilling_zmb>
+            </updates>
+        </layout>
+    </adminhtml>
+	<crontab>
+        <jobs>
+            <zimbrabillingzmbcron>
+                <schedule>
+                    <cron_expr>0 0 * * * * </cron_expr>
+                </schedule>
+                <run>
+                    <model>zimbrabilling_zmb/observer::setcron</model>
+                </run>
+            </zimbrabillingzmbcron>
+        </jobs>
+    </crontab>
+</config>

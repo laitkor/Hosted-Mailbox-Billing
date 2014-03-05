@@ -1,0 +1,710 @@
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+<script src="http://ajax.microsoft.com/ajax/jQuery.Validate/1.7/jQuery.Validate.min.js"></script>           
+<script type="application/javascript">
+$(document).ready(function(){
+   $('#myform').validate();
+   $('#renewform').validate();	 
+  
+});
+
+$(document).ready(function(){	
+	// select element styling
+	$('select.selectplan').each(function(){
+		var title = $(this).attr('title');
+		//alert(title);
+		if( $('option:selected', this).val() != ''  ) title = $('option:selected',this).text();
+		//alert(title);
+		$(this)
+			.css({'z-index':10,'opacity':0})
+			.after('<span class="selectplan">' + title + '</span>')
+			.change(function(){
+				val = $('option:selected',this).text();
+				  $(this).next().text(val);
+				});
+	});
+
+});
+
+
+
+  function displayCreateBox(){
+  	document.getElementById('createmailbox').style.display = 'block';
+	document.getElementById('plandetails').style.display = 'none';
+  }
+  function displayprev(step){
+  	window.location.href = 'zmb?step='+step;
+   }
+   
+/*  function displayprevstep(){
+	window.history.back(1);
+  }*/
+  
+  function displaybilling(){
+  	document.getElementById('billing').style.display = 'block';
+  }
+
+/******** called when selecting plan ********/
+  
+  function checkplan(planid){ 
+	 var value = document.getElementById('billingcycle_'+planid).value;
+	 var renewdomain = document.getElementById('renewdomain').value;
+	 var renewcustid = document.getElementById('renewcustid').value;
+	 //var degrade = document.getElementById('degradeplan_'+planid).value;
+	 var merge = document.getElementById('merge').value;
+	 //alert(degrade);
+	 //return false;
+	 if((renewdomain !='' && renewcustid !='' && merge == 'degrade')){
+		 if(value == '' || value == '0'){
+		   alert('Please select billing cycle'); 
+		   return false;
+	   }else{
+		 $.post('<?php echo $this->getmailboxescountUrl();?>',{'domain':renewdomain,'planid':planid},function(data){
+			 if(data.optedplanid == planid){
+				document.getElementById('myformpost_'+planid).submit(); 
+			 }
+			 
+			else if((data.count+1 <= data.planmailboxes)){	
+				 document.getElementById('myformpost_'+planid).submit(); 
+			 }else{
+				alert('You have already created more mailboxes than the requested plan. You can change the billing cycle for the plan'); 
+			 }
+		 },'json');
+	   }
+	 }
+	 else if((renewdomain !='' && renewcustid !='' && merge == 'yes')){ 
+	   if(value == '' || value == '0'){
+		   alert('Please select billing cycle'); 
+		   return false;
+	   }else{
+		 $.post('<?php echo $this->getmailboxescountUrl();?>',{'domain':renewdomain,'planid':planid},function(data){ 
+			 if((data.count+1 <= data.planmailboxes)){
+				 //alert('OK tested');
+				 document.getElementById('myformpost_'+planid).submit(); 
+			 }else{
+				 $("#notallowedmsg").fadeIn(0500);
+				  $("div.close").click(function() {
+					  $("#notallowedmsg").fadeOut("normal");    // function close pop up
+				  }); 
+			 }
+		 },'json');
+		 
+	   }
+	 }
+	 
+	 else if(value == '' || value == '0'){
+		alert('Please select billing cycle'); 
+		return false;
+	 }
+	  
+	 else{
+		document.getElementById('myformpost_'+planid).submit(); 
+	 }
+  }
+
+/******to display mailboxes when plan selected************/
+  
+  function display_mailboxes(planid,billingid){
+	  //alert(planid);
+	  //alert(billingid);
+	  $.post('<?php echo $this->getBillingUrl();?>',{'planid':planid,'billingid':billingid},function(data){
+		  //alert(data.price);
+		  //alert(data.mailboxes);
+		  var text = '';
+		  if(data.price != null){
+		  	text +='<p>@ '+data.price+' '+data.duration+'</p>';
+		  }
+		  $('#zm_mailboxes_'+planid).html(text);
+	  },'json');
+  }
+
+/******check domain avalability************/
+  
+  $(document).ready(function(){
+	 $('#check_avail').click(function(){
+		 $('#myform').validate();
+		 if($('#myform').valid()){
+			  $('#loaderimage').css({'visibility':'visible'});
+			  //return false;
+			  domain = $('#domain').val();
+			  value = $('#domain').val();
+			  value = value.match(/:\/\/(.[^/]+)/)[1];
+		  
+			  $.post('<?php echo $this->getAvailabilityUrl();?>',{'domain':value,'fulldomain':domain},function(data){ // check for domain existence in namecheap
+				   if(data == 'true'){
+						   $('#avail_msg').css({'display':'block'});
+						   $('#confirm_order').css({'display':'none'});
+						   //$('#back').css({'float':'left'});
+						   $('#loaderimage').css({'visibility':'hidden'});
+						   $('#check_avail').css({'display':'block'}); 
+				   }
+				   else{
+					 var xml = data; 
+					 xmlDoc = $.parseXML( xml ),
+					 $xml = $( xmlDoc ),
+					 $title = $xml.find( "CommandResponse" ).each(function(){
+						 var available = $(this).find('DomainCheckResult').attr('Available');
+						  if(available == 'true'){
+							 $('#confirm_order').css({'display':'block'});
+							 $('#confirm_order').css({'float':'right'});
+							 $('#confirm_order').removeAttr('disabled');
+							 //$('#back').css({'float':'left'});
+							 $('#loaderimage').css({'visibility':'hidden'});
+							 $('#check_avail').css({'display':'none'});
+							 $('#avail_msg').css({'display':'none'});
+							 $('#domain').attr('readonly', true);
+						  }else{
+							 $('#avail_msg').css({'display':'block'});
+							 $('#confirm_order').css({'display':'none'});
+							 //$('#back').css({'float':'left'});
+							 $('#loaderimage').css({'visibility':'hidden'});
+							 $('#check_avail').css({'display':'block'}); 
+						
+						  }
+					
+						});
+				   }
+				  
+			  }); 
+	      } // endif form valid
+	 }); 
+  });
+		 
+ $(document).ready(function(){
+
+	$('#zm_features').click(function(){
+		$('#tabs_features').css({'display':'block'});
+		$('.tabs_plans_overview').css({'display':'none'});
+		$('#tabs_addons').css({'display':'none'});
+		$('#zm_features_li').addClass('active');
+		$('#zm_overview_li').removeClass('active');
+		$('#zm_addons_li').removeClass('active');
+
+	});
+	
+	$('#zm_overview').click(function(){
+		$('#tabs_features').css({'display':'none'});
+		$('.tabs_plans_overview').css({'display':'block'});
+		$('#tabs_addons').css({'display':'none'});
+		$('#zm_overview_li').addClass('active');
+		$('#zm_addons_li').removeClass('active');
+		$('#zm_features_li').removeClass('active');
+	});
+	
+	$('#zm_addons').click(function(){
+		$('#tabs_addons').css({'display':'block'});
+		$('#tabs_features').css({'display':'none'});
+		$('.tabs_plans_overview').css({'display':'none'});
+		$('#zm_addons_li').addClass('active');
+		$('#zm_overview_li').removeClass('active');
+		$('#zm_features_li').removeClass('active');
+	});
+ });
+
+</script> 
+<?php $resource = Mage::getSingleton('core/resource');
+	  $read= $resource->getConnection('core_read');
+	  $session = Mage::getModel('core/session')->getData();
+	  $plans = $read->query("SELECT * FROM zimbrabilling_zmb LIMIT 2")->fetchAll();
+	  
+	  $customer = Mage::getSingleton('customer/session')->getCustomer();
+	  $customerid = $customer->getId();
+	  $alldomains = $read->query("SELECT * FROM zimbrabilling_domains WHERE customerid = '".$customerid."' ")->fetchAll();
+	
+	  $configValue = Mage::getStoreConfig('zmb/view/items_per_page');
+	  $configreturn_url = Mage::getStoreConfig('zmb/view/return_url');
+	  $confignotify_url = Mage::getStoreConfig('zmb/view/notify_url');
+	  #echo $configreturn_url;
+	  $urlString = Mage::helper('core/url')->getCurrentUrl();
+	  $url = Mage::getSingleton('core/url')->parseUrl($urlString);
+	  $path = $url->getPath();
+?>
+<div id="zm_main">
+  <div id="news_list_messages"><?php echo $this->getMessagesBlock()->getGroupedHtml() ?></div>
+  <div class="zm_page-title">
+    <h2 class="color_blue" style="text-align:center; font-family: georgia;font-size: 24px;"><b>HOSTED MAILBOX BILLING</b></h2>
+    <h3 class="color_blue">
+      <p style="text-align:center;">Sharing Files, Documents, Calendars, Contacts with Colleagues Inside and </p>
+      <p style="text-align:center;"> Outside your Organization Made Easier than Ever Before!</p>
+    </h3>
+  </div>
+  <?php if(!$this->getRequest()->getParam('step') || ($this->getRequest()->getParam('step') == 1) ){?>
+  <div class="zm_intro">
+    <h2 style="font-weight:bold;">Introduction</h2>
+    <p> Hosted Mailbox Billing is an advanced innovation that caters to all your communication and messaging requirements, both inside and outside your organisation. The unified system allows emails, sharing calendars, scheduling tasks on calendar, document collaboration, file sharing, social media and complete contact management. It has highly intuitive user interface with extensive list of features that improves productivity of the organization and makes it easy to manage emails and collaborate with other colleagues.
+      
+      Hosted Mailbox Billing empowers the users to streamline and organize their email workflow with its single-location access to multiple email accounts and other effective features.</p>
+    <p> Hosted Mailbox Billing is available in 2 options:
+      
+      Shared Mail Service plan comes with reliable standard features that curtails to all the basic requirements for communication and messaging.
+      
+      Dedicated/Per Email Account plan is loaded with extensive features like mobile device synchronisation and many more to make it exclusive. </p>
+  </div>
+  <div id="zm_tabs">
+    <ul id="tabbed">
+      <li id="zm_overview_li" class="active"><a href="javascript:void(0);" id="zm_overview">Overview</a></li>
+      <li id="zm_features_li"><a href="javascript:void(0);" id="zm_features">Features</a></li>
+      <li id="zm_addons_li"><a href="javascript:void(0);" id="zm_addons">Add-Ons</a></li>
+    </ul>
+    <div class="clear"></div>
+    <div class="zm_list_view">
+      <div class="tabs_plans_overview">
+        <?php foreach($plans as $p):
+      $billingcycles = $read->query("SELECT * FROM zimbrabilling_cycles WHERE planid = '".$p['zmb_id']."'")->fetchAll();
+       if($this->getRequest()->getParam('plan') == 'renew' && $this->getRequest()->getParam('merge')){  
+	   		$renewcustid = $this->getRequest()->getParam('customerid');
+			$renewdomain = $this->getRequest()->getParam('domain');
+			$renewplandetail = $read->query("SELECT * FROM zimbrabilling_domains WHERE customerid = '".$renewcustid."' AND domain = '".$renewdomain."'")->fetchObject();
+	        $renewcycle = $read->query("SELECT * FROM zimbrabilling_cycles WHERE id = '".$renewplandetail->billingcycle."'")->fetchObject();
+			#print_r($renewcycle);
+	   }
+?>
+        <div id="plan_<?php echo $p['zmb_id'];?>" <?php if($this->getRequest()->getParam('plan') && $renewplandetail->planid == $p['zmb_id']){?> class="renewplan zm_left" <?php }else{?>class="zm_left"<?php }?>>
+          <form action="<?php echo $this->getPostUrl()?>" method="post" id="myformpost_<?php echo $p['zmb_id'];?>" name="myformpost_<?php echo $p['zmb_id'];?>" onSubmit="return false;" >
+            <input type="hidden" name="customerid" value="<?php echo $customerid;?>" />
+            <input type="hidden" name="created_time" value="<?php echo NOW();?>" />
+            <input type="hidden" name="mailboxes" value="<?php echo $p['mailboxes'];?>" id="mailboxes" />
+            <input type="hidden" name="mailboxsize" value="<?php echo $p['mailboxsize'];?>" id="mailboxsize" />
+            <?php if($this->getRequest()->getParam('plan') && $this->getRequest()->getParam('merge')){?>
+            <input type="hidden" name="planchanged" value="1" />
+            <input type="hidden" name="merge" id="merge" value="<?php echo $this->getRequest()->getParam('merge');?>" />
+            <input type="hidden" name="renewdomain" id="renewdomain" value="<?php echo $renewdomain;?>" />
+            <input type="hidden" name="renewcustid" id="renewcustid" value="<?php echo $renewcustid;?>" />
+            <?php }else{?>
+            <input type="hidden" name="renewdomain" id="renewdomain" value="" />
+            <input type="hidden" name="renewcustid" id="renewcustid" value="" />
+            <input type="hidden" name="merge" id="merge" value="" />
+            <input type="hidden" name="degradeplan" id="degradeplan_<?php echo $p['zmb_id'];?>" value="" />
+            <?php }?>
+            <div>
+              <h3 style="color:#6c999f;"><?php echo $p['title'];?></h3>
+            </div>
+            <div class="zm_plan_content"><?php echo $p['content'];?></div>
+            <p style="text-align:center;width:166px;"><b style="font-size:14px !important;"><?php echo $p['mailboxes'];?></b> mailboxes</p>
+            <?php if((isset($session['cycleprice']) && isset($session['cycleduration']) && $session['planid'] == $p['zmb_id']) || (!empty($renewcycle) && $renewcycle->planid == $p['zmb_id'])){?>
+            <div id="zm_mailboxes_<?php echo $p['zmb_id'];?>" style="margin-left: 40px;">
+              <?php if(isset($session['cycleprice'])){?>
+              <p><?php echo '@'.$session['cycleprice'].' '.$session['cycleduration'];?></p>
+              <?php }else{?>
+              <p><?php echo '@'.$renewcycle->price.' '.$renewcycle->duration;?></p>
+              <?php }?>
+            </div>
+            <?php }else{?>
+            <div id="zm_mailboxes_<?php echo $p['zmb_id'];?>" style="margin-left: 40px;"></div>
+            <?php }?>
+            <div>
+              <input type="hidden" name="planid" id="planid<?php echo $p['zmb_id'];?>" value="<?php echo $p['zmb_id'];?>" />
+              <input type="hidden" name="title" id="planname_<?php echo $p['zmb_id'];?>" value="<?php echo $p['title'];?>" />
+              <select style='display:block; clear:both;' name='billingcycle' id='billingcycle_<?php echo $p['zmb_id'];?>'  class='required selectplan' onchange="display_mailboxes('<?php echo $p['zmb_id']?>',this.value);" title="Select one">
+                <option></option>
+                <?php foreach($billingcycles as $b){?>
+                <option value="<?php echo $b['id']; ?>" <?php if(($session['billingcycle'] == $b['id']) || (!empty($renewcycle) && $renewcycle->id == $b['id'])): echo "selected=selected"; endif; ?>><?php echo $b['title'];?></option>
+                <?php }?>
+              </select>
+            </div>
+            <div class="clear"></div>
+            <div style="margin-top:15px;margin-left:50px;">
+              <input type="submit" value="Add Plan" class="nav_zm" onclick="checkplan('<?php echo $p['zmb_id'];?>');"/>
+            </div>
+          </form>
+        </div>
+        <?php endforeach;?>
+        <div id="notallowedmsg">
+          <div class="close"></div>
+          You have already created more mailboxes than the requested plan. You cannot merge with this plan. Select another plan or <a href="/zmb?step=3&customerid=<?php echo $this->getRequest()->getParam('customerid');?>&domain=<?php echo $this->getRequest()->getParam('domain');?>">click here</a> to go back. </div>
+        <div class="clear"></div>
+        <div class="zm_description">
+          <h2>Why Hosted Mailbox Billing?</h2>
+          <ul>
+            <li>Hosted Mailbox Billing <strong>saves your valuable time</strong> spent in organizing your mails, contacts and documents making your workflow more efficient and streamlined.</li>
+            <li>It enables you with <strong>Anytime, Anywhere access</strong> to all your emails, documents, calendars and contacts irrespective to the device you use (desktop, laptop or mobile) with the <strong>real time updation</strong>.</li>
+            <li>Hosted Mailbox Billing provides you with this amazing feature of <strong>accessing your multiple email accounts at a single place</strong> - business vs personal. This enables you to manage your calendar appointments in a more informed manner.</li>
+            <li>It has a <strong>fast messaging platform</strong> with quick view and organizing options for mails and attachments. Hosted Mailbox Billing also includes the drag and drop functionality, document and HTML rendering and sorting by themes.</li>
+            <li>It has an advanced and <strong>fast search tool</strong> built right in your mailbox.</li>
+            <li>No need of any additional software to <strong>share</strong> spreadsheets, documents, presentations and forms with your colleagues inside and outside your organization.</li>
+            <li>Hosted Mailbox Billing enables you to share business calendars and address book with an option to hide back the personal ones. </li>
+            <li>One can also check availability and schedule meetings instantly with an add on feature of booking meeting rooms.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="clear"></div>
+      <!------features tab starts----->
+      <div id="tabs_features" style="display:none;">
+        <ul>
+          <li> <strong>Real Time Synchronization -</strong> All the mails, calendars, documents are updated on the real time basis irrespective of the device used. You may use your desktop, mobile or laptop to access your mailbox from anywhere, anytime. </li>
+          <li> <strong>Managing Business with Single Interface -</strong> Hosted Mailbox Billing enables you to access multiple email accounts at one powerful interface. This helps you in accessing all available information at a single place keeping you well informed at all times. </li>
+          <li> <strong>Accessibility with range of Devices -</strong> Hosted Mailbox Billing works effectively with web-enabled Windows, Linux and Mac devices and also through smart phones using Apple iSync. </li>
+          <li> <strong>Fast Messaging Platform -</strong> The drag and drop capability, documents and HTML rendering saves time making your workflow much more time efficient. </li>
+          <li> <strong>Advance Search Capabilities -</strong> Hosted Mailbox Billing has a strong search tool with targeted keywords and options of attachments and similar themes. </li>
+          <li> <strong>Built in Collaboration Tools -</strong> Hosted Mailbox Billing allows you to share all kinds of files and formats, calendars and mails without the need of any additional software. </li>
+          <li> <strong>Powerful yet Easy to Use Interface -</strong> It has a friendly user interface, with quick navigation options which are easy to learn and incorporate in your daily tasks. </li>
+          <li> <strong>Share Contacts and Address Books -</strong> Hosted Mailbox Billing gives you the feature to share your contacts and address books while hiding the personal ones. </li>
+          <li> <strong>Schedule Meetings as per Availability -</strong> Hosted Mailbox Billing allows you to check availability and schedule meetings instantly. </li>
+          <li> <strong>Continuous Improvements -</strong> We incessantly work towards enhancing the Hosted Mailbox Billing system by integrating it with novel features and advanced tools. </li>
+        </ul>
+      </div>
+      <!-------features tab ends here-----------> 
+      <!-------add ons tab--------->
+      <div id="tabs_addons" style="display:none;">
+        <ul>
+          <li> Just select a mailbox plan suiting your requirements. Add on more mailboxes during the checkout process. </li>
+        </ul>
+      </div>
+      
+      <!-------add ons tab ends here-------->
+      <div style="clear:both;"></div>
+    </div>
+  </div>
+  <!--- div zm_tabs ends here------->
+  <?php }?>
+  <?php if(($this->getRequest()->getParam('step') && ($this->getRequest()->getParam('step') == 2))){
+	    $mysession = Mage::getModel('core/session')->getData();
+		#echo '<pre>';print_r($mysession);
+	?>
+  <div class="zm_intro">
+    <h2>Associate or Purchase a Domain for your New Plan</h2>
+    <p>Before you move forward with the checkout process we require that you have a domain name for the Mailboxes Plan selected. If you don't have a domain as of yet, Hosted Mailbox Billing may help you purchase and register one.</p>
+    <h4>Proceed as Mentioned Below</h4>
+    <p>Select a domain name, subdomain* name, or foreign** domain that you have previously reserved and purchased*** through Hosted Mailbox Billing or a third party to associate with your hosting plan:</p>
+  </div>
+  <div id="zm_domain">
+    <div style="font-family: georgia;font-size: 16px;text-transform:uppercase;">Domain Registration</div>
+    <!--<p id="" style="display:none;font-weight: bold;margin-top: 10px;text-align: center;">Domain Available. Please enter another domain</p>-->
+    <div id="avail_msg" style="display:none;margin: 0 auto !important;width: 300px;">
+      <ul class="zm_messages">
+        <li class="error-msg">
+          <ul>
+            <li style="width:366px !important;"><span>This domain is already registered, please enter another domain.</span></li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+    <form action="<?php echo $this->getPostUrl()?>" method="post" id="myform" name="myform">
+      <div  style="margin-top:20px;text-align:left;line-height:30px;padding-bottom:50px;margin-left:50px;">
+        <ul>
+          <li>
+            <label class="zm_text"><b>Domain Name:</b></label>
+            <input type="text" name="domain" id="domain" class="required url txtbox" value="<?php if($mysession['domain']!=''): echo $mysession['domain']; endif; ?>" />
+            <img src="<?php echo $this->getSkinUrl('images/opc-ajax-loader.gif');?>" id="loaderimage" style="visibility:hidden;margin-left:10px;margin-top:5px;" /> <br/>
+            <p style="margin-left:40px;text-align:center;margin-top:-6px;color:gray;">http://example.com</p>
+          </li>
+          <li>
+            <label class="zm_text"><b>Prefered Username:</b></label>
+            <input type="text" name="email_prefered" id="email_prefered" class="txtbox" value="<?php if($mysession['email_prefered']!=''): echo $mysession['email_prefered']; endif; ?>" />
+          </li>
+          <input type="hidden" id="selectedplanid" name="selectedplanid" />
+          <input type="hidden" id="selectedplanname" name="selectedplanname"/>
+        </ul>
+      </div>
+      <div class="clear"></div>
+      <div style="text-align:center;width:300px;margin:0 auto;" id="nav_buttons">
+        <input type="button" name="back" value="Back" id="back" onClick="displayprev('1');" class="nav_zm"/>
+        <input type="submit" value="Confirm Order" class="nav_zm" id="confirm_order" name="confirm_order" style="display:none;width:130px !important;" disabled="disabled"/>
+        <!-- <input type="button" name="check_avail" id="check_avail" value="Check availability" class="nav_button" onclick="checkavailability();" style="width:140px !important;float:right;"/>-->
+        <input type="button" name="check_avail" id="check_avail" value="Check availability" class="nav_zm"  style="width:140px !important;float:right;"/>
+      </div>
+    </form>
+  </div>
+  <div class="zm_intro">
+    <p> * Hosted Mailbox Billing allows you to associate a subdomain with its hosting plans but the customer is responsible for setting up this domain name.</p>
+    <p>**   Hosted Mailbox Billing allows you to associate a foreign domain name with its hosting plans but the customer is responsible for reserving this domain name.</p>
+    <p>*** Hosted Mailbox Billing assumes that submitted domain is already owned or administered by you and will not be securing this domain for registration for this order.</p>
+  </div>
+  <?php }?>
+  <?php if($this->getRequest()->getParam('step') && ($this->getRequest()->getParam('step') == 3)){
+	
+ /*********************renew section starts****************************/	
+	    if($this->getRequest()->getParam('customerid') && $this->getRequest()->getParam('domain')){
+			#$custom_arr = array();
+            $id = $this->getRequest()->getParam('customerid');
+		    $domain = $this->getRequest()->getParam('domain');
+            $customer_login = Mage::getModel('customer/customer')->load($id);
+		    Mage::getSingleton('customer/session')->setCustomerAsLoggedIn($customer_login);
+	   	   	$resource = Mage::getSingleton('core/resource');
+			$session = Mage::getModel('core/session');
+		    $domaindetails = $read->query("SELECT * FROM zimbrabilling_domains WHERE customerid = '".$id."' AND domain = '".$domain."'")->fetchObject();
+			$planprice = $read->query("SELECT * FROM `zimbrabilling_cycles` WHERE planid = '".$domaindetails->planid."' AND id = '".$domaindetails->billingcycle."'")->fetchObject();
+			$highestplan = $read->query("SELECT * FROM `zimbrabilling_zmb` WHERE mailboxes = (SELECT max(mailboxes) FROM `zimbrabilling_zmb`)")->fetchObject();
+			
+			#print_r($highestplan);
+			$session->setData('domain',$domaindetails->domain);
+			$planselected = $domaindetails->plan_title;
+			$custom_arr = $domaindetails->domain.'=>'.$id;
+			
+			$currentdate = NOW();
+		    $date1 = strtotime($domaindetails->expiry_date);
+		    #echo '<br/>';  
+			$currdate = date('Y-m-d',strtotime(NOW()));
+			$datetime1 = $currdate;
+			
+     	    $date2 = strtotime($currentdate);
+			$datetime2 = date('Y-m-d',$date1);
+			$dStart = new DateTime($datetime1);
+			$dEnd = new DateTime($datetime2);
+			$dDiff = $dStart->diff($dEnd);
+			$interval = $dDiff->days;
+			#echo $interval;
+			#die;
+			if($interval <= '7' && $domaindetails->renew_status == 'mailsent'){
+			?>
+  <div class="zm_intro">
+    <div class="zm_shoppingcart">
+      <?php if(!isset($_POST['options'])){?>
+      <div style="width:335px;">
+        <ul style="margin-bottom:20px;">
+          <li>
+            <p><b>Plan Opted by you: </b><?php echo $planselected;?></p>
+          </li>
+          <li>
+            <p><b>Domain :</b><?php echo $domaindetails->domain;?></p>
+          </li>
+          <?php if($domaindetails->additional_mailboxes !='' && $domaindetails->additional_mailboxes !='0' ):?>
+          <li>
+            <p><b>Plan mailboxes :</b><?php echo $domaindetails->plan_mailboxes;?></p>
+          </li>
+          <li>
+            <p><b>Additional Mailboxes :</b><?php echo $domaindetails->additional_mailboxes;?></p>
+          </li>
+          <?php endif;?>
+          <li>
+            <p><b>Total mailboxes:</b><?php echo $domaindetails->mailboxes;?></p>
+          </li>
+        </ul>
+        <form method="post" action="" id="renewform" name="renewform">
+          <input type="radio" name="options" value="same" class="required"/>
+          &nbsp;Continue with the same plan.<br/>
+          <?php if($highestplan->zmb_id == $domaindetails->planid):?>
+          <input type="radio" name="options" value="degrade" class="required"/>
+          &nbsp;&nbsp;Degrade plan
+          <?php endif;?>
+          <?php if($highestplan->zmb_id != $domaindetails->planid):?>
+          <input type="radio" name="options" value="another" class="required"/>
+          &nbsp;Upgrade plan.<br/>
+          <?php endif;?>
+          <br/>
+          <br/>
+          <input type="submit" name="renew" value="Submit" class="nav_zm" />
+        </form>
+      </div>
+      <?php }?>
+      <?php if(isset($_POST['options']) && ($_POST['options'] == 'same')){?>
+      <div>
+        <ul style="margin-bottom:20px;">
+          <li>
+            <p><b>Plan Opted by you: </b><?php echo $planselected;?></p>
+          </li>
+          <li>
+            <p><b>Domain :</b><?php echo $domaindetails->domain;?></p>
+          </li>
+          <li>
+            <p><b>Duration of plan:</b><?php echo $domaindetails->duration;?></p>
+          </li>
+          <li>
+            <p><b>Expiry Date:</b><?php echo date('F d,Y',strtotime($domaindetails->expiry_date));?></p>
+          </li>
+          <?php if($domaindetails->additional_mailboxes !=0):?>
+          <li>
+            <p><b>Plan Mailboxes :</b><?php echo $domaindetails->plan_mailboxes;?></p>
+          </li>
+          <li>
+            <p><b>Additional mailboxes:</b><?php echo $domaindetails->additional_mailboxes;?></p>
+          </li>
+          <?php endif;?>
+          <li>
+            <p><b>Total mailboxes:</b><?php echo $domaindetails->mailboxes;?></p>
+          </li>
+          <li>
+            <p><b>Total Price:</b>
+              <?php $plan_price = substr_replace($domaindetails->plan_price," ", 0, 1);
+				       #echo "SELECT * FROM `zimbrabilling_cycles` WHERE id = '".$domaindetails->billingcycle."'";
+				       $read = Mage::getSingleton('core/resource')->getConnection('core_read');
+				       $sql = $read->query("SELECT * FROM `zimbrabilling_cycles` WHERE id = '".$domaindetails->billingcycle."'")->fetchObject();
+					   #print_r($sql);
+					   #echo $sql->per_mailbox_price;
+					   #echo substr_replace($sql->per_mailbox_price," ",0,1);
+					   if($domaindetails->additional_mailboxes!='0'){
+					      $upgradeprice = substr_replace($sql->per_mailbox_price," ",0,1) * $domaindetails->additional_mailboxes;
+						   $totalprice = $plan_price + $upgradeprice;
+					   }else{
+						    $totalprice = $plan_price;  
+					   }
+					  
+				       echo '$'.$totalprice;?>
+            </p>
+          </li>
+        </ul>
+        <form action="https://www.paypal.com/cgi-bin/webscr" method="post" id="myform" name="myform">
+          <input type="hidden" name="orderconfirm" />
+          <input type="hidden" name="customerid" value="<?php echo $id;?>" />
+          <input type="hidden" name="cmd" value="_xclick">
+          <input type="hidden" name="business" value="<?php  echo $configValue;?>">
+          <input type="hidden" name="amount" value="<?php echo $totalprice;?>" />
+          <input type="hidden" name="item_name" value="<?php echo $domaindetails->plan_title;?>" />
+          <input type="hidden" name="item_number" value="<?php echo $domaindetails->planid; ?>" />
+          <input type="hidden" name="no_shipping" value="0">
+          <input type="hidden" name="no_note" value="1">
+          <input type="hidden" name="currency_code" value="USD">
+          <input type="hidden" name="lc" value="AU">
+          <input type="hidden" name="bn" value="PP-BuyNowBF">
+          <input type="hidden" name="custom" value="<?php echo $custom_arr;?>" />
+          <input type="hidden" name="return" value="<?php echo 'http://'.$_SERVER['SERVER_NAME']?>/renew">
+          <input type="hidden" name="notify_url" value="<?php echo 'http://'.$_SERVER['SERVER_NAME'];?>" />
+          <input type="hidden" name="cancel_return" value="<?php echo 'http://'.$_SERVER['SERVER_NAME']?>/cancel" />
+          <input type="hidden" name="customerid" value="<?php echo $id;?>" />
+          <input type="hidden" name="expirydate" value="<?php echo $domaindetails->expiry_date;?>" />
+          <input type="hidden" name="detail" value="<?php echo $domaindetails->duration;?>" />
+          <input type="hidden" name="alreadyselecteddomain" id="alreadyselecteddomain" value="<?php echo $domaindetails->domain;?>"/>
+          <input type="hidden" name="alreadyselectedplan" id="alreadyselectedplan" value="<?php echo $domaindetails->planid;?>" />
+          <a href="/zmb?step=3&customerid=<?php echo $id;?>&domain=<?php echo $domain;?>" class="zmb_login_reg" style="cursor:default;">Back</a>
+          <input type="submit" name="renew" value="Renew" class="nav_zm" />
+        </form>
+      </div>
+      <?php }?>
+      <?php if(isset($_POST['options']) && $_POST['options'] == 'another'){
+			       $custid = $this->getRequest()->getParam('customerid');
+		    	   $custdomain = $this->getRequest()->getParam('domain');  
+		  ?>
+      <form method="post">
+        <p>Do you want to merge with existing plan.</p>
+        <input type="radio" name="yesno" value="yes" />
+        &nbsp;Yes <br/>
+        <input type="radio" name="yesno" value="no"/>
+        &nbsp;No <br/>
+        <div style="padding-top:10px;">
+          <input type="hidden" name="custid" id="custid" value="<?php echo $custid;?>" />
+          <input type="hidden" name="custdomain" id="custdomain" value="<?php echo $custdomain;?>" />
+          <a href="/zmb?step=3&customerid=<?php echo $id;?>&domain=<?php echo $domain;?>" class="zmb_login_reg" style="cursor:default;">Back</a>
+          <input type="submit" value="Submit" class="nav_zm"/>
+        </div>
+      </form>
+      <?php  }if(isset($_POST['options']) && $_POST['options'] == 'degrade'){
+			         $custid = $this->getRequest()->getParam('customerid');
+		    	     $custdomain = $this->getRequest()->getParam('domain');   
+		    
+		  ?>
+      <script>
+                      window.location.href = '/zmb?customerid=<?php echo $custid;?>&domain=<?php echo $custdomain;?>&plan=renew&merge=degrade';
+                    </script>
+      <?php }?>
+      <?php if(isset($_POST['yesno'])){
+				   $id = $this->getRequest()->getParam('customerid');
+		    	   $domain = $this->getRequest()->getParam('domain');
+				   if($_POST['yesno'] == 'yes'){ ?>
+      <script>
+                      window.location.href="/zmb?customerid=<?php echo $id;?>&domain=<?php echo $domain;?>&plan=renew&merge=yes";
+                    </script>
+      <?php }if($_POST['yesno'] == 'no' ){?>
+      <script>
+                      window.location.href="/zmb?customerid=<?php echo $id;?>&domain=<?php echo $domain;?>&plan=renew&merge=no";
+                    </script>
+      <?php }
+		  }?>
+    </div>
+  </div>
+  <?php 
+		}else{ ?>
+  <div class="zm_intro">
+    <p>Your plan has not expired yet !!!</p>
+  </div>
+  <?php 	}
+        } // renew ends here
+		else{?>
+  <div class="zm_intro">
+    <?php  if ($this->helper('customer')->isLoggedIn() ) {
+			 $mysession = Mage::getModel('core/session')->getData();
+			 $read = Mage::getSingleton('core/resource')->getConnection('core_read');
+			 $newdetail = $read->query("SELECT * FROM `zimbrabilling_cycles` WHERE id = '".$mysession['billingcycle']."'")->fetchObject();	
+			 #echo '<pre>'; print_r($mysession); #die;
+			?>
+    <div class="zm_shoppingcart">
+      <form action="https://www.paypal.com/cgi-bin/webscr" method="post">
+        <input type="hidden" name="getalldetails" value="getalldetails" />
+        <input type="hidden" name="customerid" value="<?php echo $customerid;?>" />
+        <input type="hidden" name="orderconfirm" />
+        <input type="hidden" name="customerid" value="<?php echo $customerid;?>" />
+        <input type="hidden" name="cmd" value="_xclick">
+        <input type="hidden" name="business" value="<?php  echo $configValue;?>">
+        <input type="hidden" name="item_name" value="<?php echo $session['planname'];?>" />
+        <input type="hidden" name="item_number" value="<?php echo $session['planid']; ?>" />
+        <input type="hidden" name="no_shipping" value="0">
+        <input type="hidden" name="no_note" value="1">
+        <input type="hidden" name="currency_code" value="USD">
+        <input type="hidden" name="lc" value="AU">
+        <input type="hidden" name="bn" value="PP-BuyNowBF">
+        <?php if($this->getRequest()->getParam('plan')){
+			    $merge = $this->getRequest()->getParam('merge');
+				if($merge == 'yes/'){?>
+        		<input type="hidden" name="amount" value="<?php echo $newdetail->price;?>" />
+        <?php }if($merge == 'no/'){
+				 $mergenodata = $read->query("SELECT * FROM `zimbrabilling_domains` WHERE domain = '".$mysession['renewdomain']."' AND customerid = '".$mysession['renewcustid']."'")->fetchObject();
+				 $renewpermailbox = substr_replace($mysession['renewpermailbox']," ",0,1) * $mysession['renewaddmailboxes'];
+				 $mergenoprice = $renewpermailbox + substr_replace($mysession['cycleprice']," ",0,1);?>
+        		<input type="hidden" name="amount" value="<?php echo $mergenoprice;?>" />
+        <?php }if($merge == 'degrade/'){
+        		  $mailboxes = substr_replace($mysession['renewpermailbox']," ",0,1)* $mysession['renewaddmailboxes']; ?>
+        		<input type="hidden" name="amount" value="<?php echo substr_replace($mysession['cycleprice']," ",0,1) +$mailboxes;?>" />
+        <?php }?>
+        <input type="hidden" name="custom" value="<?php echo $mysession['renewdomain'].'=>'.$mysession['renewcustid']."=>".$mysession['mailboxes']."=>".$merge."=>".$mysession['renewcycle'];?>" />
+        <input type="hidden" name="return" value="<?php echo 'http://'.$_SERVER['SERVER_NAME']?>/renew" />
+        <?php }else{?>
+              <input type="hidden" name="amount" value="<?php echo $session['price'];?>" />
+              <input type="hidden" name="return" value="<?php echo 'http://'.$_SERVER['SERVER_NAME']?>/thankyou-page"/>
+              <input type="hidden" name="custom" value="<?php echo $customerid;?>" />
+        <?php }?>
+              <input type="hidden" name="notify_url" value="<?php echo 'http://'.$_SERVER['SERVER_NAME'];?>" />
+              <input type="hidden" name="cancel_return" value="<?php echo 'http://'.$_SERVER['SERVER_NAME']?>/cancel" />
+        <ul style="margin-bottom:20px;">
+          <li><b>Plan Opted by You:</b>&nbsp;&nbsp;<?php echo $mysession['planname'];?></li>
+          <?php if(($mysession['renewaddmailboxes'] && $merge == 'no/') || ($mysession['renewaddmailboxes'] && $merge == 'degrade/') ):?>
+          <li><b>Additional Mailboxes:</b><?php echo $mysession['renewaddmailboxes'];?></li>
+          <?php endif;?>
+          <?php if((($mergenodata->additional_mailboxes!='' || $mergenodata->additional_mailboxes!='0')) && $merge == 'no/'){?>
+          <li><b>Total Mailboxes:</b>&nbsp;&nbsp;<?php echo $mysession['mailboxes'] + $mergenodata->additional_mailboxes ;?></li>
+          <?php }elseif(($mysession['renewaddmailboxes']) && $merge !='yes/'){?>
+          <li><b>Total Mailboxes:</b>&nbsp;&nbsp;<?php echo $mysession['renewaddmailboxes']+ $mysession['mailboxes'];?></li>
+          <?php }else{?>
+          <li><b>Total Mailboxes:</b>&nbsp;&nbsp;<?php echo $mysession['mailboxes'];?></li>
+          <?php }?>
+          <li><b>Each Mailbox Size:</b>&nbsp;&nbsp;<?php echo $mysession['mailboxsize'];?></li>
+          <li><b>Billing Cycle Opted:</b>&nbsp;<?php echo $newdetail->title;?></li>
+          <?php if($merge == 'no/'){?>
+          <li><b>Total Amount:</b>&nbsp;<?php echo '$'.$mergenoprice;?></li>
+          <?php }elseif($mysession['renewpermailbox'] && $this->getRequest()->getParam('plan') && $merge !='yes/'){
+				      $mailboxes = substr_replace($mysession['renewpermailbox']," ",0,1)* $mysession['renewaddmailboxes'];?>
+          <li><b>Total Amount:</b>&nbsp;$<?php echo substr_replace($mysession['cycleprice']," ",0,1) +$mailboxes;?></li>
+          <?php }else{?>
+          <li><b>Total Amount:</b>&nbsp;<?php echo $newdetail->price;?></li>
+          <?php }?>
+        </ul>
+        <?php if(!$this->getRequest()->getParam('plan')){?>
+        	   <input type="button" name="back" value="Back" id="back" onClick="displayprev('2');" class="nav_zm"/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <?php }?>
+        <?php if($this->getRequest()->getParam('plan') && $this->getRequest()->getParam('merge') ){?>
+              <a href="/zmb?step=3&customerid=<?php echo $customerid;?>&domain=<?php echo $mysession['renewdomain'];?>" class="zmb_login_reg" style="cursor:default;">Back</a>
+        <?php }?>
+        <input type="submit" name="confirm_details" value="Confirm & Checkout" class="nav_zm" style="width:147px !important;"/>
+      </form>
+    </div>
+    <?php	}else {?>
+    <p>Before you move forward with the checkout process we require you to login to purchase the Plan selected.Click here to login <a href="<?php echo Mage::getUrl('customer/account/login');?>?page=zmb" class="zmb_login_reg">Login</a></p>
+    <p>If you don't have an account as of yet, Click here to create one <a href="<?php echo Mage::getUrl('customer/account/create');?>?page=zmb" class="zmb_login_reg">Register</a></p>
+    <?php }?>
+  </div>
+  <?php	}
+	
+}?>
+
+  <div class="clear"></div>
+</div>
+<div class="clear"></div>
+<style>
+#renewform label.error{
+	display:inline-block;
+	float:right;
+	margin-left:0px !important;
+	font-size:12px !important;	
+	
+}
+#renewform input.error{
+  margin-right:0px !important;	
+}
+</style>
